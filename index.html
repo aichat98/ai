@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>공유 메모장</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      max-width: 600px;
+      margin: auto;
+    }
+    textarea {
+      width: 100%;
+      height: 80px;
+      margin-bottom: 10px;
+      resize: none;
+    }
+    button {
+      padding: 8px 16px;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      border-bottom: 1px solid #ccc;
+      padding: 10px 0;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <h1>📅 공유 메모장</h1>
+  <textarea id="memo" placeholder="300자 이하로 입력해 주세요" maxlength="300"></textarea>
+  <button onclick="submitMemo()">작성</button>
+
+  <h2>📜 전체 메모</h2>
+  <ul id="memoList"></ul>
+
+  <script>
+    const endpoint = "https://script.google.com/macros/s/AKfycbz_uN6eoE0RcDHxYF6xwEgxuPo2wKEuBhOD40WarcPRQXTPsV7QjDh8tzrwcr9EYmtN/exec";
+
+    async function submitMemo() {
+      const text = document.getElementById("memo").value.trim();
+      if (!text) return alert("내용을 입력해 주세요!");
+      await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text })
+      });
+      document.getElementById("memo").value = "";
+      loadMemos();
+    }
+
+    async function loadMemos() {
+      const res = await fetch(endpoint);
+      const data = await res.json();
+      const list = document.getElementById("memoList");
+      list.innerHTML = "";
+      data.reverse().forEach(m => {
+        const li = document.createElement("li");
+        const date = new Date(m.time).toLocaleString("ko-KR");
+        li.textContent = `[${date}] ${m.message}`;
+        list.appendChild(li);
+      });
+    }
+
+    loadMemos();
+  </script>
+</body>
+</html>
