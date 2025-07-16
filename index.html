@@ -1,72 +1,98 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>공유 메모장</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      padding: 20px;
-      max-width: 600px;
-      margin: auto;
-    }
-    textarea {
-      width: 100%;
-      height: 80px;
-      margin-bottom: 10px;
-      resize: none;
-    }
-    button {
-      padding: 8px 16px;
-    }
-    ul {
-      list-style: none;
-      padding: 0;
-    }
-    li {
-      border-bottom: 1px solid #ccc;
-      padding: 10px 0;
-      white-space: pre-wrap;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>깃허브 페이지용 움짤 메이커</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; margin: 0; text-align: center; color: #333; }
+        h1 { font-weight: 600; }
+        #captureArea { width: 600px; height: 300px; border: 2px dashed #ccc; background-color: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .animated-box { width: 80px; height: 80px; background-color: #0d6efd; animation: moveAndChange 5s linear infinite; }
+        @keyframes moveAndChange {
+            0%   { transform: translateX(-250px) rotate(0deg); background-color: #0d6efd; border-radius: 0; }
+            50%  { transform: translateX(250px) rotate(180deg); background-color: #dc3545; border-radius: 50%; }
+            100% { transform: translateX(-250px) rotate(360deg); background-color: #0d6efd; border-radius: 0; }
+        }
+        #recordBtn { font-size: 18px; padding: 12px 24px; cursor: pointer; border: none; background-color: #198754; color: white; border-radius: 8px; transition: background-color 0.2s, transform 0.1s; font-weight: 500; }
+        #recordBtn:hover { background-color: #157347; }
+        #recordBtn:active { transform: scale(0.98); }
+        #recordBtn:disabled { background-color: #6c757d; cursor: not-allowed; }
+        #status { font-size: 16px; height: 24px; margin-top: 10px; color: #555; }
+    </style>
 </head>
 <body>
-  <h1>📅 공유 메모장</h1>
-  <textarea id="memo" placeholder="300자 이하로 입력해 주세요" maxlength="300"></textarea>
-  <button onclick="submitMemo()">작성</button>
 
-  <h2>📜 전체 메모</h2>
-  <ul id="memoList"></ul>
+    <h1>움직이는 페이지를 움짤로 만들기</h1>
+    <div id="captureArea">
+        <div class="animated-box"></div>
+    </div>
+    
+    <button id="recordBtn">움짤 만들기 시작!</button>
+    <p id="status">버튼을 누르면 5초간 녹화합니다.</p>
 
-  <script>
-    const endpoint = "https://script.google.com/macros/s/AKfycbz_uN6eoE0RcDHxYF6xwEgxuPo2wKEuBhOD40WarcPRQXTPsV7QjDh8tzrwcr9EYmtN/exec";
+    <!-- 안정적인 외부 서버에서 검증된 라이브러리를 불러옵니다. -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
 
-    async function submitMemo() {
-      const text = document.getElementById("memo").value.trim();
-      if (!text) return alert("내용을 입력해 주세요!");
-      await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text })
-      });
-      document.getElementById("memo").value = "";
-      loadMemos();
-    }
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const recordBtn = document.getElementById('recordBtn');
+            const statusEl = document.getElementById('status');
+            const captureArea = document.getElementById('captureArea');
 
-    async function loadMemos() {
-      const res = await fetch(endpoint);
-      const data = await res.json();
-      const list = document.getElementById("memoList");
-      list.innerHTML = "";
-      data.reverse().forEach(m => {
-        const li = document.createElement("li");
-        const date = new Date(m.time).toLocaleString("ko-KR");
-        li.textContent = `[${date}] ${m.message}`;
-        list.appendChild(li);
-      });
-    }
+            recordBtn.addEventListener('click', async () => {
+                try {
+                    recordBtn.disabled = true;
+                    statusEl.textContent = "녹화 준비 중...";
 
-    loadMemos();
-  </script>
+                    // 이제 웹 서버 환경이므로 workers를 다시 사용해서 빠르게 처리합니다.
+                    const gif = new GIF({
+                        workers: 2, // 일꾼 2명 사용
+                        quality: 10,
+                        workerScript: 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js' // 일꾼 스크립트 경로
+                    });
+
+                    const DURATION = 5000;
+                    const FRAME_RATE = 20;
+                    const totalFrames = DURATION / 1000 * FRAME_RATE;
+                    
+                    for (let i = 0; i < totalFrames; i++) {
+                        const canvas = await html2canvas(captureArea, { logging: false });
+                        canvas.getContext('2d', { willReadFrequently: true });
+                        gif.addFrame(canvas, { delay: 1000 / FRAME_RATE });
+                        
+                        // 진행 상황을 부드럽게 표시합니다.
+                        statusEl.textContent = `프레임 캡처 중... ${Math.round(((i + 1) / totalFrames) * 100)}%`;
+                    }
+
+                    statusEl.textContent = '움짤을 생성하고 있습니다...';
+                    
+                    // 움짤 생성 진행률을 실시간으로 표시합니다.
+                    gif.on('progress', function(p) {
+                        statusEl.textContent = `움짤 생성 중... ${Math.round(p * 100)}%`;
+                    });
+
+                    gif.on('finished', function(blob) {
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'animation.gif';
+                        a.click();
+                        URL.revokeObjectURL(url);
+
+                        recordBtn.disabled = false;
+                        statusEl.textContent = '🎉 움짤 생성 완료!';
+                    });
+
+                    gif.render();
+
+                } catch (error) {
+                    console.error("움짤 생성 중 오류 발생:", error);
+                    statusEl.textContent = "오류 발생! F12를 눌러 콘솔을 확인하세요.";
+                    recordBtn.disabled = false;
+                }
+            });
+        });
+    </script>
 </body>
 </html>
