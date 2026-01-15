@@ -946,7 +946,7 @@ class GeminiClient {
 
 // ==================== Prompts ====================
 class PromptTemplates {
-    static outline(characters, setting, plot, isAdultContent = false) {
+    static outline(characters, setting, plot, isAdultContent = false, targetChars = 30000) {
         const charSummary = characters.map(c => 
             `${c.name}: ${c.profile?.substring(0, 100) || ''}`
         ).join('\n');
@@ -961,6 +961,12 @@ class PromptTemplates {
 - 아웃라인에도 성적 장면과 수위 있는 내용 포함
 </중요_지시사항>
 ` : '';
+
+        // 씬 개수와 씬당 분량 계산
+        const charsPerScene = 1800; // 씬당 평균 분량
+        const numScenes = Math.ceil(targetChars / charsPerScene);
+        const sceneLengthMin = Math.floor(targetChars / numScenes * 0.9); // 최소 분량 (90%)
+        const sceneLengthMax = Math.floor(targetChars / numScenes * 1.1); // 최대 분량 (110%)
 
         return `당신은 전문 소설 플롯 설계자입니다.
 ${adultInstruction}
@@ -979,14 +985,21 @@ ${setting}
 결: ${plot.gyeol}
 </기승전결>
 
-위 정보를 바탕으로 15~20개 씬으로 구성된 상세한 아웃라인을 작성하세요.
+<목표_분량>
+전체 목표 분량: ${targetChars.toLocaleString()}자
+씬 개수: 정확히 ${numScenes}개
+씬당 분량: ${sceneLengthMin}~${sceneLengthMax}자
+</목표_분량>
+
+위 정보를 바탕으로 정확히 ${numScenes}개 씬으로 구성된 상세한 아웃라인을 작성하세요.
+반드시 ${numScenes}개 씬을 생성하세요. 더 많거나 적으면 안 됩니다.
 
 각 씬은 다음 정보를 포함:
 - 제목: 간결하게
 - 등장인물: 누가 나오는지
 - 핵심사건: 무슨 일이 일어나는지
 - 감정변화: 시작→끝 감정
-- 분량목표: 1500~2000자
+- 분량목표: ${sceneLengthMin}~${sceneLengthMax}자 (씬당 분량을 정확히 맞춰서 전체가 ${targetChars.toLocaleString()}자가 되도록)
 
 출력은 반드시 다음 JSON 형식:
 {
@@ -1766,7 +1779,8 @@ class NovelGeneratorApp {
             this.state.characters,
             this.state.setting,
             this.state.plot,
-            this.state.isAdultContent
+            this.state.isAdultContent,
+            this.state.targetChars
         );
         
         const result = await this.client.generate(prompt, 'flash');
@@ -1815,7 +1829,7 @@ class NovelGeneratorApp {
                 
                 const context = {
                     summary: this.generateSummary(generatedScenes),
-                    previousEnding: i > 0 ? this.getLastPart(generatedScenes[i - 1], 300) : ''
+                    previousEnding: i > 0 && generatedScenes[i - 1] ? this.getLastPart(generatedScenes[i - 1], 300) : ''
                 };
                 
                 const prompt = PromptTemplates.sceneExpansion(scene, this.state.characters, context, this.state.isAdultContent);
@@ -1908,19 +1922,33 @@ class NovelGeneratorApp {
                 this.state.plot
             );
             
-            const result = await this.client.generate(prompt, 'flash', { maxRetries: 3 });
+            // Pro 모델로 편집 (더 정확한 편집을 위해)
+            const result = await this.client.generate(prompt, 'pro', { 
+                maxRetries: 3,
+                maxTokens: 8192 // 편집된 원고 출력을 위해 충분한 토큰 확보
+            });
             
             // 편집된 내용 적용
-            const editedContent = result.text.trim();
+            let editedContent = result.text.trim();
+            
+            // 프롬프트나 설명이 포함되어 있을 수 있으므로 원고 부분만 추출
+            // "원고" 태그가 있으면 그 부분만, 없으면 전체를 사용
+            const novelMatch = editedContent.match(/<원고>([\s\S]*?)<\/원고>/);
+            if (novelMatch) {
+                editedContent = novelMatch[1].trim();
+            }
             
             // 품질 체크: 편집된 내용이 너무 짧거나 비정상적이면 원본 유지
             if (editedContent.length < originalContent.length * 0.5) {
                 UI.addLog('편집 결과가 비정상적으로 짧아 원본을 유지합니다', 'error');
                 this.state.generatedContent = originalContent;
+            } else if (editedContent.length > originalContent.length * 2) {
+                UI.addLog('편집 결과가 비정상적으로 길어 원본을 유지합니다', 'error');
+                this.state.generatedContent = originalContent;
             } else {
                 this.state.generatedContent = editedContent;
                 this.state.totalChars = editedContent.length;
-                UI.addLog(`편집 완료 (${originalContent.length}자 → ${editedContent.length}자)`);
+                UI.addLog(`편집 완료 (${originalContent.length}자 → ${editedContent.length}자)`, 'success');
             }
             
             this.state.totalCost += result.cost;
