@@ -818,16 +818,48 @@ class GeminiClient {
 
             const text = data.candidates[0].content.parts[0].text;
             
-            // API 응답에서 실제 토큰 수 가져오기 (있으면 사용, 없으면 추정)
-            let inputTokens, outputTokens;
+            // API 응답에서 실제 토큰 수 가져오기
+            let inputTokens = 0;
+            let outputTokens = 0;
+            
             if (data.usageMetadata) {
+                // 실제 API 응답의 토큰 수 사용
                 inputTokens = data.usageMetadata.promptTokenCount || 0;
                 outputTokens = data.usageMetadata.candidatesTokenCount || 0;
-            } else {
-                // 한국어는 1자당 약 1.2-1.5 토큰 정도
-                inputTokens = Math.ceil(prompt.length * 1.3);
-                outputTokens = Math.ceil(text.length * 1.3);
+                
+                // totalTokenCount도 확인
+                if (data.usageMetadata.totalTokenCount) {
+                    const total = data.usageMetadata.totalTokenCount;
+                    // input/output이 0이면 total에서 추정
+                    if (inputTokens === 0 && outputTokens === 0) {
+                        // 일반적으로 output이 input보다 많음 (70:30 비율)
+                        outputTokens = Math.floor(total * 0.7);
+                        inputTokens = total - outputTokens;
+                    } else if (inputTokens === 0) {
+                        inputTokens = total - outputTokens;
+                    } else if (outputTokens === 0) {
+                        outputTokens = total - inputTokens;
+                    }
+                }
             }
+            
+            // API 응답에 토큰 정보가 없거나 0이면 한국어 기준으로 추정
+            // 한국어는 1자당 약 2-3 토큰 (보수적으로 계산)
+            if (inputTokens === 0) {
+                inputTokens = Math.ceil(prompt.length * 2.5);
+            }
+            if (outputTokens === 0) {
+                outputTokens = Math.ceil(text.length * 2.5);
+            }
+            
+            // 디버깅용 로그 (개발자 도구에서 확인 가능)
+            console.log('Token calculation:', {
+                hasMetadata: !!data.usageMetadata,
+                inputTokens,
+                outputTokens,
+                promptLength: prompt.length,
+                textLength: text.length
+            });
             
             return {
                 text,
