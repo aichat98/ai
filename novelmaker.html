@@ -755,13 +755,20 @@ class GeminiClient {
         };
         this.prices = {
             flash: { input: 0.50, output: 3.00 },
-            pro: { input: 2.00, output: 12.00 }
+            pro: { 
+                input: 2.00, 
+                output: 12.00,
+                inputHigh: 4.00,
+                outputHigh: 18.00,
+                threshold: 200000 // 토큰 기준
+            }
         };
     }
 
-    async generate(prompt, model = 'flash', options = {}) {
+    async generate(prompt, model = 'flash', options = {}, retryCount = 0) {
         const modelName = this.models[model] || model;
         const url = `${this.baseUrl}/models/${modelName}:generateContent?key=${this.apiKey}`;
+        const maxRetries = options.maxRetries || 3;
         
         try {
             const response = await fetch(url, {
@@ -786,12 +793,26 @@ class GeminiClient {
 
             if (!response.ok) {
                 const error = await response.json();
-                throw new Error(`API Error (${response.status}): ${error.error?.message || 'Unknown error'}`);
+                const errorMessage = error.error?.message || 'Unknown error';
+                
+                // 재시도 가능한 에러인 경우
+                if (retryCount < maxRetries && (response.status === 429 || response.status >= 500)) {
+                    const delay = Math.pow(2, retryCount) * 1000; // 지수 백오프
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    return this.generate(prompt, model, options, retryCount + 1);
+                }
+                
+                throw new Error(`API Error (${response.status}): ${errorMessage}`);
             }
 
             const data = await response.json();
             
             if (!data.candidates || data.candidates.length === 0) {
+                if (retryCount < maxRetries) {
+                    const delay = Math.pow(2, retryCount) * 1000;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    return this.generate(prompt, model, options, retryCount + 1);
+                }
                 throw new Error('No response from API');
             }
 
@@ -807,6 +828,11 @@ class GeminiClient {
                 cost: this.calculateCost(inputTokens, outputTokens, model)
             };
         } catch (error) {
+            if (retryCount < maxRetries && error.message.includes('API Error')) {
+                const delay = Math.pow(2, retryCount) * 1000;
+                await new Promise(resolve => setTimeout(resolve, delay));
+                return this.generate(prompt, model, options, retryCount + 1);
+            }
             console.error('Gemini API Error:', error);
             throw error;
         }
@@ -814,8 +840,20 @@ class GeminiClient {
 
     calculateCost(inputTokens, outputTokens, model = 'flash') {
         const prices = this.prices[model];
-        const inputCost = (inputTokens / 1000000) * prices.input;
-        const outputCost = (outputTokens / 1000000) * prices.output;
+        let inputPrice = prices.input;
+        let outputPrice = prices.output;
+        
+        // Pro 모델의 경우 토큰 수에 따라 가격 변경
+        if (model === 'pro' && prices.threshold) {
+            const totalTokens = inputTokens + outputTokens;
+            if (totalTokens > prices.threshold) {
+                inputPrice = prices.inputHigh;
+                outputPrice = prices.outputHigh;
+            }
+        }
+        
+        const inputCost = (inputTokens / 1000000) * inputPrice;
+        const outputCost = (outputTokens / 1000000) * outputPrice;
         const totalUSD = inputCost + outputCost;
         const totalKRW = totalUSD * 1350;
         
@@ -998,7 +1036,7 @@ ${charDetails}
 ${fullNovel.substring(0, 50000)}
 </원고>
 
-이 원고를 냉정하게 분석하고 수정이 필요한 부분만 찾아주세요.
+이 원고를 냉정하게 분석하고 수정이 필요한 부분을 찾아서 실제로 수정된 전체 원고를 출력하세요.
 
 <분석_카테고리>
 1. 어색한 문장/표현
@@ -1007,14 +1045,14 @@ ${fullNovel.substring(0, 50000)}
 4. 캐릭터 일관성 문제
 5. 씬 전환 부자연스러움
 
-<출력_형식>
-**[긴급]**
-[씬번호-위치]
-원본: "..."
-수정: "..."
-───
+<작업_지침>
+- 원고 전체를 읽고 문제점을 찾아 수정하세요
+- 수정된 전체 원고를 그대로 출력하세요
+- 원본의 구조와 흐름은 유지하되, 문장과 표현만 개선하세요
+- 20~30개 정도의 주요 수정을 포함하세요
 
-총 20~30개 제안`;
+<출력>
+수정된 전체 원고를 그대로 출력하세요. 메타 설명이나 수정 내역 설명 없이 원고만 출력하세요.`;
     }
 }
 
@@ -1582,56 +1620,132 @@ class NovelGeneratorApp {
         const totalScenes = this.state.scenes.length;
         let generatedScenes = [];
         
+        // 진행 상황 저장을 위한 키
+        const progressKey = `novel_progress_${this.state.startTime}`;
+        
         for (let i = 0; i < totalScenes; i++) {
-            const scene = this.state.scenes[i];
-            const percent = ((i + 1) / totalScenes) * 100;
-            
-            UI.updateProgress('Phase 2', i + 1, totalScenes, percent);
-            UI.addLog(`씬 ${i + 1}/${totalScenes} 생성 중: ${scene.title}`);
-            
-            const context = {
-                summary: this.generateSummary(generatedScenes),
-                previousEnding: i > 0 ? this.getLastPart(generatedScenes[i - 1], 300) : ''
-            };
-            
-            const prompt = PromptTemplates.sceneExpansion(scene, this.state.characters, context, this.state.isAdultContent);
-            const result = await this.client.generate(prompt, 'flash');
-            
-            generatedScenes.push(result.text);
-            
-            this.state.totalCost += result.cost;
-            this.state.totalChars += result.text.length;
-            
-            UI.updateCounter(this.state.totalCost, this.state.totalChars);
-            UI.showScenePreview(i + 1, scene.title, result.text);
-            UI.addLog(`씬 ${i + 1} 완료 (${result.text.length}자, ₩${result.cost})`);
-            
-            await this.sleep(1000);
+            try {
+                const scene = this.state.scenes[i];
+                const percent = ((i + 1) / totalScenes) * 100;
+                
+                UI.updateProgress('Phase 2', i + 1, totalScenes, percent);
+                UI.addLog(`씬 ${i + 1}/${totalScenes} 생성 중: ${scene.title}`);
+                
+                const context = {
+                    summary: this.generateSummary(generatedScenes),
+                    previousEnding: i > 0 ? this.getLastPart(generatedScenes[i - 1], 300) : ''
+                };
+                
+                const prompt = PromptTemplates.sceneExpansion(scene, this.state.characters, context, this.state.isAdultContent);
+                const result = await this.client.generate(prompt, 'flash', { maxRetries: 3 });
+                
+                // 품질 체크
+                const qualityCheck = this.checkSceneQuality(result.text, scene.targetLength);
+                if (!qualityCheck.passed) {
+                    UI.addLog(`씬 ${i + 1} 품질 경고: ${qualityCheck.message}`, 'error');
+                }
+                
+                generatedScenes.push(result.text);
+                
+                this.state.totalCost += result.cost;
+                this.state.totalChars += result.text.length;
+                
+                // 진행 상황 저장
+                const progress = {
+                    scenes: generatedScenes,
+                    currentIndex: i,
+                    totalCost: this.state.totalCost,
+                    totalChars: this.state.totalChars
+                };
+                localStorage.setItem(progressKey, JSON.stringify(progress));
+                
+                UI.updateCounter(this.state.totalCost, this.state.totalChars);
+                UI.showScenePreview(i + 1, scene.title, result.text);
+                UI.addLog(`씬 ${i + 1} 완료 (${result.text.length}자, ₩${result.cost})`);
+                
+                await this.sleep(1000);
+            } catch (error) {
+                UI.addLog(`씬 ${i + 1} 생성 실패: ${error.message}`, 'error');
+                // 완성된 씬들은 저장
+                if (generatedScenes.length > 0) {
+                    this.state.generatedContent = generatedScenes.join('\n\n');
+                    const progress = {
+                        scenes: generatedScenes,
+                        currentIndex: i - 1,
+                        totalCost: this.state.totalCost,
+                        totalChars: this.state.totalChars,
+                        error: error.message
+                    };
+                    localStorage.setItem(progressKey, JSON.stringify(progress));
+                }
+                throw error;
+            }
         }
         
         this.state.generatedContent = generatedScenes.join('\n\n');
+        localStorage.removeItem(progressKey); // 완료되면 삭제
         UI.addLog('Phase 2 완료!');
+    }
+    
+    checkSceneQuality(text, targetLength) {
+        const length = text.length;
+        const minLength = targetLength * 0.7; // 최소 70%
+        const maxLength = targetLength * 1.5; // 최대 150%
+        
+        if (length < minLength) {
+            return { passed: false, message: `분량 부족 (${length}자, 목표: ${targetLength}자)` };
+        }
+        if (length > maxLength) {
+            return { passed: false, message: `분량 초과 (${length}자, 목표: ${targetLength}자)` };
+        }
+        
+        // 기본적인 품질 체크
+        if (text.length < 100) {
+            return { passed: false, message: '너무 짧은 텍스트' };
+        }
+        
+        return { passed: true };
     }
 
     async phase3_editing() {
         UI.addLog('Phase 3: 편집 시작');
         UI.updateProgress('Phase 3', 0, 1, 0);
         
-        const prompt = PromptTemplates.editing(
-            this.state.generatedContent,
-            this.state.characters,
-            this.state.plot
-        );
+        // 원본 백업
+        const originalContent = this.state.generatedContent;
         
-        const result = await this.client.generate(prompt, 'flash');
-        
-        // 간단히 수정 제안만 받고 원본 유지
-        UI.addLog('편집 제안 완료');
-        
-        this.state.totalCost += result.cost;
-        UI.updateCounter(this.state.totalCost, this.state.totalChars);
-        UI.updateProgress('Phase 3', 1, 1, 100);
-        UI.addLog('Phase 3 완료!');
+        try {
+            const prompt = PromptTemplates.editing(
+                this.state.generatedContent,
+                this.state.characters,
+                this.state.plot
+            );
+            
+            const result = await this.client.generate(prompt, 'flash', { maxRetries: 3 });
+            
+            // 편집된 내용 적용
+            const editedContent = result.text.trim();
+            
+            // 품질 체크: 편집된 내용이 너무 짧거나 비정상적이면 원본 유지
+            if (editedContent.length < originalContent.length * 0.5) {
+                UI.addLog('편집 결과가 비정상적으로 짧아 원본을 유지합니다', 'error');
+                this.state.generatedContent = originalContent;
+            } else {
+                this.state.generatedContent = editedContent;
+                this.state.totalChars = editedContent.length;
+                UI.addLog(`편집 완료 (${originalContent.length}자 → ${editedContent.length}자)`);
+            }
+            
+            this.state.totalCost += result.cost;
+            UI.updateCounter(this.state.totalCost, this.state.totalChars);
+            UI.updateProgress('Phase 3', 1, 1, 100);
+            UI.addLog('Phase 3 완료!');
+        } catch (error) {
+            UI.addLog(`편집 실패: ${error.message}. 원본을 유지합니다.`, 'error');
+            // 에러 발생 시 원본 유지
+            this.state.generatedContent = originalContent;
+            UI.updateProgress('Phase 3', 1, 1, 100);
+        }
     }
 
     showCompletion() {
