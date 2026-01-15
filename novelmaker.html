@@ -29,7 +29,7 @@
             appearance: none;
             height: 6px;
             border-radius: 3px;
-            background: linear-gradient(to right, #4a4a4a 0%, #4a4a4a 20%, #d1d1d1 20%, #d1d1d1 100%);
+            background: linear-gradient(to right, #4a4a4a 0%, #4a4a4a 22.2%, #d1d1d1 22.2%, #d1d1d1 100%);
             outline: none;
         }
 
@@ -322,7 +322,7 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
                                 <i data-lucide="ruler" class="w-4 h-4"></i>
-                                목표 분량: <span id="target-chars-display" class="text-blue-600 font-bold">30,000</span>자
+                                목표 분량: <span id="target-chars-display" class="text-gray-900 font-bold">30,000</span>자
                             </label>
                             <input 
                                 type="range" 
@@ -390,10 +390,6 @@
                         </div>
 
                         <div class="flex gap-4">
-                            <button class="flex-1 bg-gray-100 text-gray-700 py-3.5 rounded-lg font-semibold hover:bg-gray-200 transition-colors flex items-center justify-center gap-2" onclick="app.prevStep()">
-                                <i data-lucide="arrow-left" class="w-5 h-5"></i>
-                                <span>이전</span>
-                            </button>
                             <button class="flex-1 bg-gray-800 text-white py-3.5 rounded-lg font-semibold hover:bg-gray-900 transition-colors flex items-center justify-center gap-2" onclick="app.nextStep()">
                                 <span>다음 단계</span>
                                 <i data-lucide="arrow-right" class="w-5 h-5"></i>
@@ -1320,6 +1316,12 @@ class NovelGeneratorApp {
         
         const slider = document.getElementById('target-chars-slider');
         if (slider) {
+            // 초기값 설정
+            const initialValue = parseInt(slider.value);
+            const initialPercent = ((initialValue - 10000) / (100000 - 10000)) * 100;
+            slider.style.background = 
+                `linear-gradient(to right, #4a4a4a 0%, #4a4a4a ${initialPercent}%, #d1d1d1 ${initialPercent}%, #d1d1d1 100%)`;
+            
             slider.addEventListener('input', (e) => {
                 const value = parseInt(e.target.value);
                 this.state.targetChars = value;
@@ -1328,7 +1330,7 @@ class NovelGeneratorApp {
                 
                 const percent = ((value - 10000) / (100000 - 10000)) * 100;
                 e.target.style.background = 
-                    `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${percent}%, #e5e7eb ${percent}%, #e5e7eb 100%)`;
+                    `linear-gradient(to right, #4a4a4a 0%, #4a4a4a ${percent}%, #d1d1d1 ${percent}%, #d1d1d1 100%)`;
                 
                 UI.updateEstimates(value);
             });
@@ -1455,7 +1457,7 @@ class NovelGeneratorApp {
     }
 
     prevStep() {
-        if (this.currentStep > 0) {
+        if (this.currentStep > 1) {
             this.currentStep--;
             UI.showStep(this.currentStep);
         }
