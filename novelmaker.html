@@ -411,7 +411,7 @@
                         <!-- 캐릭터 카드들이 여기 추가됨 -->
                     </div>
 
-                    <button id="add-character-btn" class="w-full border-2 border-dashed border-gray-300 text-gray-600 py-3 rounded-lg font-medium hover:border-blue-400 hover:text-blue-600 transition flex items-center justify-center gap-2">
+                    <button id="add-character-btn" class="w-full border-2 border-dashed border-gray-300 text-gray-600 py-3 rounded-lg font-medium hover:border-gray-400 hover:text-gray-800 transition flex items-center justify-center gap-2">
                         <i data-lucide="plus-circle" class="w-5 h-5"></i>
                         <span>캐릭터 추가 (최대 5명)</span>
                     </button>
@@ -421,7 +421,7 @@
                             <i data-lucide="arrow-left" class="w-5 h-5"></i>
                             <span>이전</span>
                         </button>
-                        <button class="flex-1 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition flex items-center justify-center gap-2" onclick="app.nextStep()">
+                        <button class="flex-1 bg-gray-800 text-white py-3 rounded-lg font-semibold hover:bg-gray-900 transition-colors flex items-center justify-center gap-2" onclick="app.nextStep()">
                             <span>다음 단계</span>
                             <i data-lucide="arrow-right" class="w-5 h-5"></i>
                         </button>
@@ -1418,6 +1418,30 @@ class NovelGeneratorApp {
                 document.getElementById('view-novel-modal').classList.add('hidden');
             });
         }
+
+        // 일시정지/취소 버튼
+        const pauseBtn = document.getElementById('pause-btn');
+        if (pauseBtn) {
+            pauseBtn.addEventListener('click', () => {
+                this.state.isPaused = !this.state.isPaused;
+                pauseBtn.innerHTML = this.state.isPaused 
+                    ? '<i data-lucide="play" class="w-5 h-5"></i><span>재개</span>'
+                    : '<i data-lucide="pause" class="w-5 h-5"></i><span>일시정지</span>';
+                lucide.createIcons();
+                UI.addLog(this.state.isPaused ? '일시정지됨' : '재개됨');
+            });
+        }
+
+        const cancelBtn = document.getElementById('cancel-btn');
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+                if (confirm('생성을 취소하시겠습니까? 완성된 씬은 저장됩니다.')) {
+                    this.currentStep = 3;
+                    UI.showStep(3);
+                    UI.addLog('생성이 취소되었습니다.', 'error');
+                }
+            });
+        }
     }
 
     updatePlotTotal() {
@@ -1563,6 +1587,14 @@ class NovelGeneratorApp {
             return;
         }
         
+        // API 키 확인
+        if (!this.client || !this.apiKey) {
+            UI.showError('API 키가 설정되지 않았습니다.');
+            this.currentStep = 0;
+            UI.showStep(0);
+            return;
+        }
+        
         this.saveCurrentStepData();
         
         this.currentStep = 4;
@@ -1574,6 +1606,12 @@ class NovelGeneratorApp {
         
         try {
             await this.phase1_generateOutline();
+            
+            // 아웃라인 검증
+            if (!this.state.scenes || this.state.scenes.length === 0) {
+                throw new Error('아웃라인 생성 실패: 씬이 생성되지 않았습니다.');
+            }
+            
             await this.phase2_expandScenes();
             await this.phase3_editing();
             
@@ -1582,6 +1620,9 @@ class NovelGeneratorApp {
         } catch (error) {
             UI.showError(`생성 중 오류: ${error.message}`);
             console.error(error);
+            // 에러 발생 시 Step 3로 돌아가기
+            this.currentStep = 3;
+            UI.showStep(3);
         }
     }
 
@@ -1617,6 +1658,10 @@ class NovelGeneratorApp {
     async phase2_expandScenes() {
         UI.addLog('Phase 2: 씬별 확장 시작');
         
+        if (!this.state.scenes || this.state.scenes.length === 0) {
+            throw new Error('씬 정보가 없습니다. Phase 1을 다시 실행해주세요.');
+        }
+        
         const totalScenes = this.state.scenes.length;
         let generatedScenes = [];
         
@@ -1625,6 +1670,11 @@ class NovelGeneratorApp {
         
         for (let i = 0; i < totalScenes; i++) {
             try {
+                // 일시정지 체크
+                while (this.state.isPaused) {
+                    await this.sleep(500);
+                }
+                
                 const scene = this.state.scenes[i];
                 const percent = ((i + 1) / totalScenes) * 100;
                 
