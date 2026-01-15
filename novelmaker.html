@@ -1,0 +1,1727 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 소설 생성기</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        /* 기본 스타일 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        /* 슬라이더 스타일 */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: linear-gradient(to right, #3b82f6 0%, #3b82f6 20%, #e5e7eb 20%, #e5e7eb 100%);
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
+            transition: all 0.2s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 3px 8px rgba(59, 130, 246, 0.4);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
+            border: none;
+            transition: all 0.2s;
+        }
+
+        input[type="range"]::-moz-range-thumb:hover {
+            transform: scale(1.1);
+        }
+
+        /* Step 아이템 스타일 */
+        .step-item {
+            padding: 14px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(255, 255, 255, 0.5);
+            margin-bottom: 8px;
+        }
+
+        .step-item:hover {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%);
+            transform: translateX(6px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .step-item.active {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(99, 102, 241, 0.2) 100%);
+            border-left: 4px solid;
+            border-image: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%) 1;
+            padding-left: 12px;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+            transform: translateX(4px);
+        }
+
+        .step-item.completed .step-icon {
+            color: #10b981;
+        }
+
+        .step-item.active .step-icon {
+            color: #3b82f6;
+        }
+
+        /* 로그 스타일 */
+        #generation-log > div {
+            padding: 6px 10px;
+            border-radius: 6px;
+            background-color: white;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+
+        /* 애니메이션 */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .step-content {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        /* 스크롤바 스타일 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* 캐릭터 카드 */
+        .character-card {
+            border: 2px solid rgba(139, 92, 246, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .character-card:hover {
+            border-color: rgba(139, 92, 246, 0.5);
+            box-shadow: 0 20px 25px -5px rgba(139, 92, 246, 0.2), 0 10px 10px -5px rgba(139, 92, 246, 0.1);
+            transform: translateY(-4px) scale(1.01);
+        }
+
+        .character-card.collapsed .character-fields {
+            display: none;
+        }
+
+        /* 버튼 개선 */
+        button {
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        /* 입력 필드 개선 */
+        input[type="text"],
+        input[type="password"],
+        textarea {
+            transition: all 0.2s;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus,
+        textarea:focus {
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+            border-color: rgba(139, 92, 246, 0.5);
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+            100% {
+                background-position: 200% 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    
+    <!-- Header -->
+    <header class="bg-white/90 backdrop-blur-md shadow-lg sticky top-0 z-50 border-b border-white/20">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                    <i data-lucide="pen-tool" class="w-6 h-6 text-white"></i>
+                </div>
+                <h1 class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">AI 소설 생성기</h1>
+            </div>
+            <div class="flex items-center gap-6">
+                <div class="bg-white/80 backdrop-blur-sm rounded-xl px-4 py-2 shadow-md border border-white/50">
+                    <div class="text-xs text-gray-600 font-medium">누적 비용</div>
+                    <div id="cost-counter" class="text-lg font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">₩0</div>
+                </div>
+                <div class="bg-white/80 backdrop-blur-sm rounded-xl px-4 py-2 shadow-md border border-white/50">
+                    <div class="text-xs text-gray-600 font-medium">현재 분량</div>
+                    <div id="char-counter" class="text-lg font-bold bg-gradient-to-r from-emerald-500 to-teal-600 bg-clip-text text-transparent">0자</div>
+                </div>
+                <button id="settings-btn" class="w-10 h-10 bg-white/80 backdrop-blur-sm hover:bg-white rounded-xl shadow-md border border-white/50 transition-all hover:scale-110 flex items-center justify-center">
+                    <i data-lucide="settings" class="w-5 h-5 text-gray-700"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-6 py-8 flex gap-6">
+        
+        <!-- Sidebar -->
+        <aside class="w-64 flex-shrink-0">
+            <div class="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl p-6 sticky top-24 border border-white/30">
+                <div class="flex items-center gap-2 mb-4">
+                    <i data-lucide="list-checks" class="w-5 h-5 text-gray-700"></i>
+                    <h2 class="font-bold text-gray-700">단계</h2>
+                </div>
+                <div class="space-y-3">
+                    <div class="step-item active" data-step="0">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="check-circle" class="w-5 h-5 step-icon"></i>
+                            <span>API 키 설정</span>
+                        </div>
+                    </div>
+                    <div class="step-item" data-step="1">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="circle" class="w-5 h-5 step-icon"></i>
+                            <span>기본 설정</span>
+                        </div>
+                    </div>
+                    <div class="step-item" data-step="2">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="circle" class="w-5 h-5 step-icon"></i>
+                            <span>캐릭터 설정</span>
+                        </div>
+                    </div>
+                    <div class="step-item" data-step="3">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="circle" class="w-5 h-5 step-icon"></i>
+                            <span>기승전결</span>
+                        </div>
+                    </div>
+                    <div class="step-item" data-step="4">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="circle" class="w-5 h-5 step-icon"></i>
+                            <span>생성 중</span>
+                        </div>
+                    </div>
+                    <div class="step-item" data-step="5">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="circle" class="w-5 h-5 step-icon"></i>
+                            <span>완료</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1">
+            <div class="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl p-8 border border-white/30">
+                
+                <!-- Step 0: API Key -->
+                <div id="step-0" class="step-content">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                            <i data-lucide="key" class="w-7 h-7 text-white"></i>
+                        </div>
+                        <h2 class="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">Gemini API 키 설정</h2>
+                    </div>
+                    
+                    <div class="bg-gradient-to-r from-purple-50 via-indigo-50 to-purple-50 border-2 border-purple-200 rounded-xl p-5 mb-6 shadow-md">
+                        <div class="flex gap-3">
+                            <div class="w-8 h-8 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <i data-lucide="info" class="w-5 h-5 text-white"></i>
+                            </div>
+                            <p class="text-sm text-gray-700 font-medium">
+                                이 도구는 Google Gemini API를 사용합니다.<br>
+                                API 키는 브라우저에만 저장되며, 서버로 전송되지 않습니다.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                API 키 입력
+                            </label>
+                            <input 
+                                type="password" 
+                                id="api-key-input"
+                                placeholder="AIzaSy..."
+                                class="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all bg-white/80 backdrop-blur-sm shadow-sm"
+                            >
+                        </div>
+
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" id="save-api-key" checked class="rounded">
+                            <span class="text-sm text-gray-600">이 브라우저에 저장</span>
+                        </label>
+
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="flex items-center gap-2 mb-2">
+                                <i data-lucide="lightbulb" class="w-5 h-5 text-gray-600"></i>
+                                <h3 class="font-medium text-gray-700">API 키 발급 방법</h3>
+                            </div>
+                            <ol class="text-sm text-gray-600 space-y-1 list-decimal list-inside ml-7">
+                                <li><a href="https://ai.google.dev" target="_blank" class="text-blue-600 hover:underline">ai.google.dev</a> 접속</li>
+                                <li>"Get API Key" 클릭</li>
+                                <li>무료 할당량으로 테스트 가능!</li>
+                            </ol>
+                        </div>
+
+                        <button id="verify-api-btn" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-4 rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] flex items-center justify-center gap-2">
+                            <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                            <span>API 키 확인 & 시작</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 1: Basic Settings -->
+                <div id="step-1" class="step-content hidden">
+                    <h2 class="text-3xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">Step 1: 기본 설정</h2>
+
+                    <div class="space-y-6">
+                        <!-- 소재 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                                <i data-lucide="globe" class="w-4 h-4"></i>
+                                소재 / 배경 설정
+                            </label>
+                            <textarea 
+                                id="setting-input"
+                                rows="3"
+                                placeholder="예: 세상이 물에 잠긴 포스트 아포칼립스"
+                                class="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all bg-white/80 backdrop-blur-sm shadow-sm"
+                            ></textarea>
+                            <p class="text-sm text-gray-500 mt-1">
+                                예시: "사이버펑크 도쿄", "중세 판타지 왕국", "2050년 화성 식민지"
+                            </p>
+                        </div>
+
+                        <!-- 목표 분량 슬라이더 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                                <i data-lucide="ruler" class="w-4 h-4"></i>
+                                목표 분량: <span id="target-chars-display" class="text-blue-600 font-bold">30,000</span>자
+                            </label>
+                            <input 
+                                type="range" 
+                                id="target-chars-slider"
+                                min="10000"
+                                max="100000"
+                                step="5000"
+                                value="30000"
+                                class="w-full"
+                            >
+                            <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                <span>1만자</span>
+                                <span>5만자</span>
+                                <span>10만자</span>
+                            </div>
+                        </div>
+
+                        <!-- 예상 정보 -->
+                        <div class="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-5 border-2 border-purple-100 shadow-md">
+                            <div class="flex items-center gap-2 mb-4">
+                                <div class="w-8 h-8 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                                    <i data-lucide="bar-chart-3" class="w-5 h-5 text-white"></i>
+                                </div>
+                                <h3 class="font-bold text-gray-800 text-lg">예상 정보</h3>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <div class="text-gray-500">예상 씬 개수</div>
+                                    <div id="estimated-scenes" class="text-lg font-bold text-gray-800">18개</div>
+                                </div>
+                                <div>
+                                    <div class="text-gray-500">예상 시간</div>
+                                    <div id="estimated-time" class="text-lg font-bold text-gray-800">9분</div>
+                                </div>
+                                <div>
+                                    <div class="text-gray-500">최소 비용</div>
+                                    <div id="estimated-cost-min" class="text-lg font-bold text-green-600">₩1,340</div>
+                                </div>
+                                <div>
+                                    <div class="text-gray-500">최대 비용</div>
+                                    <div id="estimated-cost-max" class="text-lg font-bold text-orange-600">₩2,954</div>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-3">
+                                * 최소: Diff만 / 최대: 전체 씬 Pro 재작성
+                            </p>
+                        </div>
+
+                        <!-- 성인물 체크박스 -->
+                        <div class="bg-rose-50 border border-rose-200 rounded-lg p-4">
+                            <label class="flex items-center gap-3 cursor-pointer">
+                                <input 
+                                    type="checkbox" 
+                                    id="adult-content-check"
+                                    class="w-5 h-5 rounded border-gray-300 text-rose-600 focus:ring-rose-500"
+                                >
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-600"></i>
+                                    <div>
+                                        <div class="font-medium text-rose-800">성인물 콘텐츠 (19+)</div>
+                                        <div class="text-xs text-rose-600 mt-0.5">체크 시 노골적인 묘사가 포함된 여성향 수위물 소설로 생성됩니다</div>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+
+                        <div class="flex gap-4">
+                            <button class="flex-1 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 py-3.5 rounded-xl font-semibold hover:from-gray-200 hover:to-gray-300 transition-all shadow-md hover:shadow-lg transform hover:scale-[1.02] flex items-center justify-center gap-2" onclick="app.prevStep()">
+                                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                                <span>이전</span>
+                            </button>
+                            <button class="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-3.5 rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] flex items-center justify-center gap-2" onclick="app.nextStep()">
+                                <span>다음 단계</span>
+                                <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Characters -->
+                <div id="step-2" class="step-content hidden">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                            <i data-lucide="users" class="w-7 h-7 text-white"></i>
+                        </div>
+                        <h2 class="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">캐릭터 설정 (2~5명)</h2>
+                    </div>
+
+                    <div id="characters-container" class="space-y-4 mb-6">
+                        <!-- 캐릭터 카드들이 여기 추가됨 -->
+                    </div>
+
+                    <button id="add-character-btn" class="w-full border-2 border-dashed border-gray-300 text-gray-600 py-3 rounded-lg font-medium hover:border-blue-400 hover:text-blue-600 transition flex items-center justify-center gap-2">
+                        <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                        <span>캐릭터 추가 (최대 5명)</span>
+                    </button>
+
+                    <div class="flex gap-4 mt-6">
+                        <button class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-300 transition flex items-center justify-center gap-2" onclick="app.prevStep()">
+                            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                            <span>이전</span>
+                        </button>
+                        <button class="flex-1 bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition flex items-center justify-center gap-2" onclick="app.nextStep()">
+                            <span>다음 단계</span>
+                            <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Plot -->
+                <div id="step-3" class="step-content hidden">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                            <i data-lucide="git-branch" class="w-7 h-7 text-white"></i>
+                        </div>
+                        <h2 class="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">기승전결</h2>
+                    </div>
+
+                    <p class="text-gray-600 mb-6">각 파트별로 원하는 흐름을 적어주세요 (각 200~300자 권장)</p>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                기(起) - 시작
+                            </label>
+                            <textarea 
+                                id="plot-ki"
+                                rows="4"
+                                placeholder="이야기의 시작, 캐릭터 소개, 초기 상황..."
+                                class="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all bg-white/80 backdrop-blur-sm shadow-sm"
+                            ></textarea>
+                            <div class="text-sm text-gray-500 text-right mt-1">
+                                <span id="ki-count">0</span>자
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                승(承) - 전개
+                            </label>
+                            <textarea 
+                                id="plot-seung"
+                                rows="4"
+                                placeholder="관계 발전, 사건 전개, 새로운 발견..."
+                                class="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all bg-white/80 backdrop-blur-sm shadow-sm"
+                            ></textarea>
+                            <div class="text-sm text-gray-500 text-right mt-1">
+                                <span id="seung-count">0</span>자
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                전(轉) - 위기/반전
+                            </label>
+                            <textarea 
+                                id="plot-jeon"
+                                rows="4"
+                                placeholder="갈등 심화, 반전, 위기 상황..."
+                                class="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all bg-white/80 backdrop-blur-sm shadow-sm"
+                            ></textarea>
+                            <div class="text-sm text-gray-500 text-right mt-1">
+                                <span id="jeon-count">0</span>자
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                결(結) - 결말
+                            </label>
+                            <textarea 
+                                id="plot-gyeol"
+                                rows="4"
+                                placeholder="해결, 결말, 여운..."
+                                class="w-full px-5 py-3.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all bg-white/80 backdrop-blur-sm shadow-sm"
+                            ></textarea>
+                            <div class="text-sm text-gray-500 text-right mt-1">
+                                <span id="gyeol-count">0</span>자
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-sm text-gray-600">
+                                총 <span id="plot-total-count" class="font-bold">0</span>자
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-4 mt-6">
+                        <button class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-300 transition flex items-center justify-center gap-2" onclick="app.prevStep()">
+                            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                            <span>이전</span>
+                        </button>
+                        <button class="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-4 rounded-xl font-bold hover:from-emerald-600 hover:to-teal-700 transition-all shadow-xl hover:shadow-2xl transform hover:scale-[1.02] flex items-center justify-center gap-2 text-lg">
+                            <i data-lucide="rocket" class="w-6 h-6"></i>
+                            <span>생성 시작!</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 4: Generating -->
+                <div id="step-4" class="step-content hidden">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+                            <i data-lucide="loader" class="w-7 h-7 text-white animate-spin"></i>
+                        </div>
+                        <h2 class="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">소설 생성 중...</h2>
+                    </div>
+
+                    <div class="space-y-6">
+                        <!-- Progress -->
+                        <div>
+                            <div class="flex justify-between text-sm text-gray-600 mb-2">
+                                <span id="progress-text">Phase 1: 준비 중...</span>
+                                <span id="progress-percent">0%</span>
+                            </div>
+                            <div class="w-full bg-gray-200/50 rounded-full h-4 overflow-hidden shadow-inner">
+                                <div id="progress-bar" class="bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 h-4 rounded-full transition-all duration-300 shadow-lg" style="width: 0%; background-size: 200% 100%; animation: shimmer 2s infinite;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Current Scene Preview -->
+                        <div id="current-scene-preview" class="bg-gray-50 rounded-lg p-6 hidden">
+                            <div class="flex items-center gap-2 mb-2">
+                                <i data-lucide="file-text" class="w-5 h-5 text-gray-700"></i>
+                                <h3 class="font-bold text-gray-700">
+                                    방금 완성: <span id="scene-title"></span>
+                                </h3>
+                            </div>
+                            <div id="scene-content" class="text-gray-600 text-sm max-h-64 overflow-y-auto mb-4"></div>
+                            <div class="flex gap-2">
+                                <button class="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200 transition flex items-center gap-2">
+                                    <i data-lucide="message-square" class="w-4 h-4"></i>
+                                    <span>피드백 남기기</span>
+                                </button>
+                                <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200 transition flex items-center gap-2">
+                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                    <span>전체 미리보기</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Generation Log -->
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <i data-lucide="terminal" class="w-5 h-5 text-gray-700"></i>
+                                <h3 class="font-medium text-gray-700">생성 로그</h3>
+                            </div>
+                            <div id="generation-log" class="bg-gray-50 rounded-lg p-4 h-48 overflow-y-auto text-sm text-gray-600 space-y-1">
+                                <div class="text-gray-400">준비 중...</div>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-4">
+                            <button id="pause-btn" class="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white py-3.5 rounded-xl font-semibold hover:from-amber-600 hover:to-orange-600 transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] flex items-center justify-center gap-2">
+                                <i data-lucide="pause" class="w-5 h-5"></i>
+                                <span>일시정지</span>
+                            </button>
+                            <button id="cancel-btn" class="flex-1 bg-gradient-to-r from-red-500 to-rose-600 text-white py-3.5 rounded-xl font-semibold hover:from-red-600 hover:to-rose-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] flex items-center justify-center gap-2">
+                                <i data-lucide="x" class="w-5 h-5"></i>
+                                <span>취소</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 5: Complete -->
+                <div id="step-5" class="step-content hidden">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
+                            <i data-lucide="check-circle" class="w-7 h-7 text-white"></i>
+                        </div>
+                        <h2 class="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">완성!</h2>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div class="bg-gradient-to-br from-purple-50 via-indigo-50 to-purple-50 rounded-2xl p-8 border-2 border-purple-100 shadow-xl">
+                            <div class="grid grid-cols-3 gap-4 text-center">
+                                <div>
+                                    <div class="text-gray-600 text-sm">최종 분량</div>
+                                    <div id="final-chars" class="text-2xl font-bold text-gray-800">30,234자</div>
+                                </div>
+                                <div>
+                                    <div class="text-gray-600 text-sm">소요 시간</div>
+                                    <div id="final-time" class="text-2xl font-bold text-gray-800">12분 18초</div>
+                                </div>
+                                <div>
+                                    <div class="text-gray-600 text-sm">총 비용</div>
+                                    <div id="final-cost" class="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">₩1,518</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-4">
+                            <button id="download-txt-btn" class="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3.5 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] flex items-center justify-center gap-2">
+                                <i data-lucide="download" class="w-5 h-5"></i>
+                                <span>TXT 다운로드</span>
+                            </button>
+                            <button id="download-docx-btn" class="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3.5 rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] flex items-center justify-center gap-2">
+                                <i data-lucide="file-down" class="w-5 h-5"></i>
+                                <span>DOCX 다운로드</span>
+                            </button>
+                        </div>
+
+                        <button id="view-novel-btn" class="w-full border-2 border-gray-300 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-50 transition flex items-center justify-center gap-2">
+                            <i data-lucide="book-open" class="w-5 h-5"></i>
+                            <span>전체 읽기</span>
+                        </button>
+
+                        <button onclick="location.reload()" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-3.5 rounded-xl font-semibold hover:from-emerald-600 hover:to-teal-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] flex items-center justify-center gap-2">
+                            <i data-lucide="sparkles" class="w-5 h-5"></i>
+                            <span>새로 만들기</span>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+            <div class="flex items-center gap-2 mb-4">
+                <i data-lucide="settings" class="w-6 h-6"></i>
+                <h2 class="text-xl font-bold">설정</h2>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        API 키 관리
+                    </label>
+                    <div class="flex gap-2">
+                        <input 
+                            type="password" 
+                            id="settings-api-key"
+                            class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                            disabled
+                        >
+                        <button class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300 transition">
+                            변경
+                        </button>
+                        <button class="px-4 py-2 bg-red-500 text-white rounded-lg text-sm hover:bg-red-600 transition">
+                            삭제
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <a href="https://ai.google.dev" target="_blank" class="flex items-center justify-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200 transition">
+                        <i data-lucide="external-link" class="w-4 h-4"></i>
+                        <span>Gemini 콘솔 열기</span>
+                    </a>
+                </div>
+            </div>
+
+            <button id="close-settings-btn" class="w-full mt-6 bg-gray-200 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-300 transition">
+                닫기
+            </button>
+        </div>
+    </div>
+
+    <!-- 모달: 소설 전체보기 -->
+    <div id="view-novel-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+            <div class="p-6 border-b flex justify-between items-center">
+                <h2 class="text-2xl font-bold">생성된 소설</h2>
+                <button id="close-novel-modal" class="p-2 hover:bg-gray-100 rounded-lg">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            <div id="novel-content" class="p-6 overflow-y-auto flex-1 whitespace-pre-wrap font-serif leading-relaxed">
+                <!-- 소설 내용 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+// ==================== Storage ====================
+class Storage {
+    static saveApiKey(apiKey) {
+        localStorage.setItem('gemini_api_key', apiKey);
+    }
+
+    static getApiKey() {
+        return localStorage.getItem('gemini_api_key');
+    }
+
+    static removeApiKey() {
+        localStorage.removeItem('gemini_api_key');
+    }
+
+    static saveProject(project) {
+        const projects = this.getProjects();
+        const existingIndex = projects.findIndex(p => p.id === project.id);
+        
+        if (existingIndex >= 0) {
+            projects[existingIndex] = project;
+        } else {
+            projects.push({
+                ...project,
+                id: project.id || Date.now(),
+                createdAt: project.createdAt || new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            });
+        }
+        
+        localStorage.setItem('novel_projects', JSON.stringify(projects));
+        return project;
+    }
+
+    static getProjects() {
+        const data = localStorage.getItem('novel_projects');
+        return data ? JSON.parse(data) : [];
+    }
+
+    static deleteProject(id) {
+        const projects = this.getProjects();
+        const filtered = projects.filter(p => p.id !== id);
+        localStorage.setItem('novel_projects', JSON.stringify(filtered));
+    }
+}
+
+// ==================== Gemini API ====================
+class GeminiClient {
+    constructor(apiKey) {
+        this.apiKey = apiKey;
+        this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta';
+        this.models = {
+            flash: 'gemini-3-flash-preview',
+            pro: 'gemini-3-pro-preview'
+        };
+        this.prices = {
+            flash: { input: 0.50, output: 3.00 },
+            pro: { input: 2.00, output: 12.00 }
+        };
+    }
+
+    async generate(prompt, model = 'flash', options = {}) {
+        const modelName = this.models[model] || model;
+        const url = `${this.baseUrl}/models/${modelName}:generateContent?key=${this.apiKey}`;
+        
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{
+                            text: prompt
+                        }]
+                    }],
+                    generationConfig: {
+                        temperature: options.temperature || 0.9,
+                        maxOutputTokens: options.maxTokens || 8192,
+                        topP: options.topP || 0.95,
+                        topK: options.topK || 40
+                    }
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(`API Error (${response.status}): ${error.error?.message || 'Unknown error'}`);
+            }
+
+            const data = await response.json();
+            
+            if (!data.candidates || data.candidates.length === 0) {
+                throw new Error('No response from API');
+            }
+
+            const text = data.candidates[0].content.parts[0].text;
+            
+            const inputTokens = Math.ceil(prompt.length / 4);
+            const outputTokens = Math.ceil(text.length / 4);
+            
+            return {
+                text,
+                inputTokens,
+                outputTokens,
+                cost: this.calculateCost(inputTokens, outputTokens, model)
+            };
+        } catch (error) {
+            console.error('Gemini API Error:', error);
+            throw error;
+        }
+    }
+
+    calculateCost(inputTokens, outputTokens, model = 'flash') {
+        const prices = this.prices[model];
+        const inputCost = (inputTokens / 1000000) * prices.input;
+        const outputCost = (outputTokens / 1000000) * prices.output;
+        const totalUSD = inputCost + outputCost;
+        const totalKRW = totalUSD * 1350;
+        
+        return Math.round(totalKRW);
+    }
+
+    async verifyApiKey() {
+        try {
+            const result = await this.generate('테스트', 'flash', { maxTokens: 10 });
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
+}
+
+// ==================== Prompts ====================
+class PromptTemplates {
+    static outline(characters, setting, plot, isAdultContent = false) {
+        const charSummary = characters.map(c => 
+            `${c.name}: ${c.profile?.substring(0, 100) || ''}`
+        ).join('\n');
+
+        const adultInstruction = isAdultContent ? `
+<중요_지시사항>
+이 소설은 19세 이상 성인 전용 콘텐츠입니다.
+- 여성향 수위물 소설 장르로 작성
+- 노골적이고 직접적인 성적 묘사 포함
+- 감정과 신체적 묘사를 구체적이고 생생하게
+- 로맨스와 성적 긴장감을 적극적으로 표현
+- 아웃라인에도 성적 장면과 수위 있는 내용 포함
+</중요_지시사항>
+` : '';
+
+        return `당신은 전문 소설 플롯 설계자입니다.
+${adultInstruction}
+<캐릭터_정보>
+${charSummary}
+</캐릭터_정보>
+
+<소재>
+${setting}
+</소재>
+
+<기승전결>
+기: ${plot.ki}
+승: ${plot.seung}
+전: ${plot.jeon}
+결: ${plot.gyeol}
+</기승전결>
+
+위 정보를 바탕으로 15~20개 씬으로 구성된 상세한 아웃라인을 작성하세요.
+
+각 씬은 다음 정보를 포함:
+- 제목: 간결하게
+- 등장인물: 누가 나오는지
+- 핵심사건: 무슨 일이 일어나는지
+- 감정변화: 시작→끝 감정
+- 분량목표: 1500~2000자
+
+출력은 반드시 다음 JSON 형식:
+{
+  "scenes": [
+    {
+      "number": 1,
+      "title": "씬 제목",
+      "characters": ["캐릭터A", "캐릭터B"],
+      "event": "핵심 사건",
+      "emotion": "감정 변화",
+      "targetLength": 1800
+    }
+  ]
+}`;
+    }
+
+    static sceneExpansion(scene, characters, context, isAdultContent = false) {
+        const relevantChars = characters.filter(c => 
+            scene.characters.includes(c.name)
+        );
+        
+        const charDetails = relevantChars.map(c => `
+<캐릭터: ${c.name}>
+${c.profile}
+</캐릭터>`).join('\n');
+
+        const adultWritingGuide = isAdultContent ? `
+<성인물_작성_지침>
+이 소설은 19세 이상 성인 전용 여성향 수위물 소설입니다.
+
+성적 묘사:
+- 노골적이고 직접적인 신체적 묘사 필수
+- 성적 행위를 구체적이고 생생하게 묘사 (성기, 성행위, 신체 접촉 등)
+- 감각적 디테일을 충분히 포함 (촉각, 시각, 청각, 온도감 등)
+- 성적 긴장감과 욕망을 적극적으로 표현
+- 성적 장면은 상세하고 노골적으로, 암시가 아닌 직접적 묘사
+
+로맨스/관계:
+- 감정적 연결과 신체적 욕망을 동시에 표현
+- 여성향 관점에서 남성 캐릭터의 매력과 신체적 특징 강조
+- 성적 화학반응과 몸의 반응을 구체적으로 (발기, 젖음, 흥분 등)
+- 애정과 욕정을 자연스럽게 결합
+
+문체:
+- 성적 장면은 노골적이되 문학적으로
+- 감정과 신체 반응을 균형있게
+- 여성 독자의 판타지를 충족시키는 묘사
+- 수치심이나 회피 없이 직접적으로 표현
+</성인물_작성_지침>
+` : '';
+
+        return `당신은 섬세한 묘사력을 가진 소설가입니다.
+${adultWritingGuide}
+<전체_맥락>
+${context.summary || ''}
+</전체_맥락>
+
+<이전_씬_마지막>
+${context.previousEnding || '(첫 씬입니다)'}
+</이전_씬_마지막>
+
+<현재_씬_설계>
+제목: ${scene.title}
+목표: ${scene.event}
+등장인물: ${scene.characters.join(', ')}
+감정변화: ${scene.emotion}
+</현재_씬_설계>
+
+${charDetails}
+
+이 씬을 ${scene.targetLength}자 내외로 작성하세요.
+
+<작성_지침>
+문체:
+- 건조하고 절제된 문체
+- 간결하되 리듬감 있게
+- 진부한 표현 금지
+
+대사:
+- 직접적으로 말하지 않고 돌려 말하기
+- 캐릭터마다 말투 구분
+- 서브텍스트 담기
+
+묘사:
+- 보여주기(Show) 원칙
+- 감각 디테일 2개 이상
+- 환경이 분위기와 연결
+
+구조:
+- 긴장 점진적 상승
+- 마지막은 다음 씬으로의 훅
+
+금기사항:
+❌ 직접 감정 서술
+❌ 진부한 비유
+❌ 불필요한 부사
+❌ AI 특유의 과잉 설명
+
+출력: 씬 본문만. 메타 설명 금지.`;
+    }
+
+    static editing(fullNovel, characters, plot) {
+        return `당신은 20년 경력의 문학 편집자입니다.
+
+<원고>
+${fullNovel.substring(0, 50000)}
+</원고>
+
+이 원고를 냉정하게 분석하고 수정이 필요한 부분만 찾아주세요.
+
+<분석_카테고리>
+1. 어색한 문장/표현
+2. AI스러운 대사/서술
+3. 불필요한 설명/반복
+4. 캐릭터 일관성 문제
+5. 씬 전환 부자연스러움
+
+<출력_형식>
+**[긴급]**
+[씬번호-위치]
+원본: "..."
+수정: "..."
+───
+
+총 20~30개 제안`;
+    }
+}
+
+// ==================== UI ====================
+class UI {
+    static updateCounter(cost, chars) {
+        const costEl = document.getElementById('cost-counter');
+        const charEl = document.getElementById('char-counter');
+        
+        if (costEl) costEl.textContent = `₩${cost.toLocaleString()}`;
+        if (charEl) charEl.textContent = `${chars.toLocaleString()}자`;
+    }
+
+    static updateProgress(phase, current, total, percent) {
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const progressPercent = document.getElementById('progress-percent');
+        
+        if (progressBar) progressBar.style.width = `${percent}%`;
+        if (progressText) progressText.textContent = `${phase}: ${current}/${total}`;
+        if (progressPercent) progressPercent.textContent = `${Math.round(percent)}%`;
+    }
+
+    static addLog(message, type = 'info') {
+        const log = document.getElementById('generation-log');
+        if (!log) return;
+        
+        const entry = document.createElement('div');
+        const time = new Date().toLocaleTimeString('ko-KR', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            second: '2-digit'
+        });
+        
+        const icon = type === 'success' ? '✓' : type === 'error' ? '✗' : '•';
+        entry.textContent = `${time} ${icon} ${message}`;
+        
+        log.prepend(entry);
+        
+        while (log.children.length > 50) {
+            log.removeChild(log.lastChild);
+        }
+    }
+
+    static showScenePreview(sceneNum, title, content) {
+        const preview = document.getElementById('current-scene-preview');
+        const sceneTitle = document.getElementById('scene-title');
+        const sceneContent = document.getElementById('scene-content');
+        
+        if (preview && sceneTitle && sceneContent) {
+            sceneTitle.textContent = `씬${sceneNum} - ${title}`;
+            sceneContent.textContent = content.substring(0, 500) + '...';
+            preview.classList.remove('hidden');
+        }
+    }
+
+    static showStep(stepNumber) {
+        document.querySelectorAll('.step-content').forEach(el => {
+            el.classList.add('hidden');
+        });
+        
+        const stepEl = document.getElementById(`step-${stepNumber}`);
+        if (stepEl) {
+            stepEl.classList.remove('hidden');
+        }
+        
+        document.querySelectorAll('.step-item').forEach((el, idx) => {
+            el.classList.remove('active');
+            if (idx === stepNumber) {
+                el.classList.add('active');
+            }
+            if (idx < stepNumber) {
+                el.classList.add('completed');
+                const icon = el.querySelector('[data-lucide]');
+                if (icon) {
+                    icon.setAttribute('data-lucide', 'check-circle');
+                }
+            }
+        });
+        
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    }
+
+    static addCharacterCard(index = 0, data = {}) {
+        const container = document.getElementById('characters-container');
+        if (!container) return;
+        
+        const card = document.createElement('div');
+        card.className = 'character-card';
+        card.dataset.index = index;
+        
+        card.innerHTML = `
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="user" class="w-5 h-5 text-gray-600"></i>
+                    <h3 class="font-bold text-gray-800">캐릭터 ${index + 1}</h3>
+                </div>
+                <div class="flex gap-2">
+                    <button class="toggle-btn px-3 py-1 bg-gray-100 text-gray-600 rounded text-sm hover:bg-gray-200">
+                        접기
+                    </button>
+                    <button class="delete-btn px-3 py-1 bg-red-100 text-red-600 rounded text-sm hover:bg-red-200">
+                        삭제
+                    </button>
+                </div>
+            </div>
+            
+            <div class="character-fields space-y-3">
+                <div>
+                    <input 
+                        type="text" 
+                        name="name"
+                        placeholder="이름"
+                        value="${data.name || ''}"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    >
+                </div>
+                
+                <div>
+                    <textarea 
+                        name="profile"
+                        rows="12"
+                        placeholder="캐릭터 프로필을 자유롭게 작성하세요.
+
+예시:
+나이/성별: 28세, 여성
+외모: 짧은 검은 머리, 날카로운 눈빛
+성격: 냉정하고 실용적. 감정 표현을 잘 안 함.
+배경: 물에 잠기기 전 해양생물학자였음.
+특기: 물속 잠수, 기계 수리
+말투: 짧고 직설적. '그래.' '됐어.'"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    >${data.profile || ''}</textarea>
+                    <div class="text-xs text-gray-500 text-right mt-1">
+                        <span class="char-count">0</span>자 / 권장 3,000~4,000자
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        container.appendChild(card);
+        
+        const toggleBtn = card.querySelector('.toggle-btn');
+        const deleteBtn = card.querySelector('.delete-btn');
+        const textarea = card.querySelector('textarea');
+        const charCount = card.querySelector('.char-count');
+        
+        toggleBtn.addEventListener('click', () => {
+            card.classList.toggle('collapsed');
+            toggleBtn.textContent = card.classList.contains('collapsed') ? '펼치기' : '접기';
+        });
+        
+        deleteBtn.addEventListener('click', () => {
+            if (confirm('이 캐릭터를 삭제하시겠습니까?')) {
+                card.remove();
+                UI.updateCharacterIndices();
+            }
+        });
+        
+        textarea.addEventListener('input', () => {
+            charCount.textContent = textarea.value.length.toLocaleString();
+        });
+        
+        charCount.textContent = (data.profile || '').length.toLocaleString();
+        
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    }
+
+    static updateCharacterIndices() {
+        const cards = document.querySelectorAll('.character-card');
+        cards.forEach((card, idx) => {
+            card.dataset.index = idx;
+            card.querySelector('h3').textContent = `캐릭터 ${idx + 1}`;
+        });
+    }
+
+    static getCharacters() {
+        const cards = document.querySelectorAll('.character-card');
+        const characters = [];
+        
+        cards.forEach(card => {
+            const name = card.querySelector('input[name="name"]').value;
+            const profile = card.querySelector('textarea[name="profile"]').value;
+            
+            if (name && profile) {
+                characters.push({ name, profile });
+            }
+        });
+        
+        return characters;
+    }
+
+    static updateEstimates(targetChars) {
+        const charsPerScene = 1800;
+        const numScenes = Math.ceil(targetChars / charsPerScene);
+        
+        const phase1 = 25;
+        const phase2 = numScenes * 19;
+        const phase3 = 240;
+        const flashTotal = phase1 + phase2 + phase3;
+        
+        const phase4Diff = 269;
+        const phase4Min = phase4Diff;
+        const phase4Max = phase4Diff + (numScenes * 145);
+        
+        const totalMin = flashTotal + phase4Min;
+        const totalMax = flashTotal + phase4Max;
+        
+        const estimatedMinutes = Math.ceil(numScenes * 0.5);
+        
+        document.getElementById('estimated-scenes').textContent = `${numScenes}개`;
+        document.getElementById('estimated-time').textContent = `${estimatedMinutes}분`;
+        document.getElementById('estimated-cost-min').textContent = `₩${totalMin.toLocaleString()}`;
+        document.getElementById('estimated-cost-max').textContent = `₩${totalMax.toLocaleString()}`;
+    }
+
+    static showError(message) {
+        alert(`오류: ${message}`);
+        UI.addLog(message, 'error');
+    }
+
+    static showSuccess(message) {
+        UI.addLog(message, 'success');
+    }
+
+    static showFinalResults(chars, time, cost) {
+        document.getElementById('final-chars').textContent = `${chars.toLocaleString()}자`;
+        document.getElementById('final-time').textContent = time;
+        document.getElementById('final-cost').textContent = `₩${cost.toLocaleString()}`;
+    }
+}
+
+// ==================== App ====================
+class NovelGeneratorApp {
+    constructor() {
+        this.currentStep = 0;
+        this.apiKey = null;
+        this.client = null;
+        
+        this.state = {
+            setting: '',
+            targetChars: 30000,
+            characters: [],
+            plot: { ki: '', seung: '', jeon: '', gyeol: '' },
+            scenes: [],
+            generatedContent: '',
+            totalCost: 0,
+            totalChars: 0,
+            startTime: null,
+            isPaused: false,
+            isAdultContent: false
+        };
+        
+        this.init();
+    }
+
+    init() {
+        this.apiKey = Storage.getApiKey();
+        if (this.apiKey) {
+            this.client = new GeminiClient(this.apiKey);
+            document.getElementById('settings-api-key').value = 
+                this.apiKey.substring(0, 10) + '***';
+        }
+        
+        this.setupEventListeners();
+        
+        UI.showStep(this.apiKey ? 1 : 0);
+        this.currentStep = this.apiKey ? 1 : 0;
+        
+        if (this.currentStep === 1) {
+            UI.addCharacterCard(0);
+            UI.addCharacterCard(1);
+        }
+    }
+
+    setupEventListeners() {
+        const verifyBtn = document.getElementById('verify-api-btn');
+        if (verifyBtn) {
+            verifyBtn.addEventListener('click', () => this.verifyApiKey());
+        }
+        
+        const settingsBtn = document.getElementById('settings-btn');
+        if (settingsBtn) {
+            settingsBtn.addEventListener('click', () => {
+                document.getElementById('settings-modal').classList.remove('hidden');
+            });
+        }
+        
+        const closeSettingsBtn = document.getElementById('close-settings-btn');
+        if (closeSettingsBtn) {
+            closeSettingsBtn.addEventListener('click', () => {
+                document.getElementById('settings-modal').classList.add('hidden');
+            });
+        }
+        
+        const slider = document.getElementById('target-chars-slider');
+        if (slider) {
+            slider.addEventListener('input', (e) => {
+                const value = parseInt(e.target.value);
+                this.state.targetChars = value;
+                document.getElementById('target-chars-display').textContent = 
+                    value.toLocaleString();
+                
+                const percent = ((value - 10000) / (100000 - 10000)) * 100;
+                e.target.style.background = 
+                    `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${percent}%, #e5e7eb ${percent}%, #e5e7eb 100%)`;
+                
+                UI.updateEstimates(value);
+            });
+            
+            UI.updateEstimates(30000);
+        }
+        
+        const addCharBtn = document.getElementById('add-character-btn');
+        if (addCharBtn) {
+            addCharBtn.addEventListener('click', () => {
+                const current = document.querySelectorAll('.character-card').length;
+                if (current < 5) {
+                    UI.addCharacterCard(current);
+                } else {
+                    alert('최대 5명까지 추가 가능합니다.');
+                }
+            });
+        }
+        
+        ['ki', 'seung', 'jeon', 'gyeol'].forEach(part => {
+            const textarea = document.getElementById(`plot-${part}`);
+            const counter = document.getElementById(`${part}-count`);
+            
+            if (textarea && counter) {
+                textarea.addEventListener('input', () => {
+                    counter.textContent = textarea.value.length;
+                    this.updatePlotTotal();
+                });
+            }
+        });
+
+        // 다운로드 버튼
+        const downloadTxtBtn = document.getElementById('download-txt-btn');
+        if (downloadTxtBtn) {
+            downloadTxtBtn.addEventListener('click', () => this.downloadTxt());
+        }
+
+        // 전체보기 버튼
+        const viewNovelBtn = document.getElementById('view-novel-btn');
+        if (viewNovelBtn) {
+            viewNovelBtn.addEventListener('click', () => this.viewNovel());
+        }
+
+        const closeNovelModal = document.getElementById('close-novel-modal');
+        if (closeNovelModal) {
+            closeNovelModal.addEventListener('click', () => {
+                document.getElementById('view-novel-modal').classList.add('hidden');
+            });
+        }
+    }
+
+    updatePlotTotal() {
+        let total = 0;
+        ['ki', 'seung', 'jeon', 'gyeol'].forEach(part => {
+            const textarea = document.getElementById(`plot-${part}`);
+            if (textarea) {
+                total += textarea.value.length;
+            }
+        });
+        
+        const totalEl = document.getElementById('plot-total-count');
+        if (totalEl) {
+            totalEl.textContent = total.toLocaleString();
+        }
+    }
+
+    async verifyApiKey() {
+        const input = document.getElementById('api-key-input');
+        const apiKey = input.value.trim();
+        
+        if (!apiKey) {
+            alert('API 키를 입력해주세요.');
+            return;
+        }
+        
+        const btn = document.getElementById('verify-api-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<span>확인 중...</span>';
+        
+        try {
+            const tempClient = new GeminiClient(apiKey);
+            const isValid = await tempClient.verifyApiKey();
+            
+            if (isValid) {
+                this.apiKey = apiKey;
+                this.client = tempClient;
+                
+                const shouldSave = document.getElementById('save-api-key').checked;
+                if (shouldSave) {
+                    Storage.saveApiKey(apiKey);
+                }
+                
+                UI.showSuccess('API 키 확인 완료!');
+                
+                setTimeout(() => {
+                    this.nextStep();
+                    UI.addCharacterCard(0);
+                    UI.addCharacterCard(1);
+                }, 500);
+            } else {
+                throw new Error('유효하지 않은 API 키입니다.');
+            }
+        } catch (error) {
+            UI.showError(error.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `
+                <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                <span>API 키 확인 & 시작</span>
+            `;
+            lucide.createIcons();
+        }
+    }
+
+    nextStep() {
+        if (!this.validateCurrentStep()) {
+            return;
+        }
+        
+        this.saveCurrentStepData();
+        
+        this.currentStep++;
+        UI.showStep(this.currentStep);
+    }
+
+    prevStep() {
+        if (this.currentStep > 0) {
+            this.currentStep--;
+            UI.showStep(this.currentStep);
+        }
+    }
+
+    validateCurrentStep() {
+        switch(this.currentStep) {
+            case 1:
+                const setting = document.getElementById('setting-input').value.trim();
+                if (!setting) {
+                    alert('소재를 입력해주세요.');
+                    return false;
+                }
+                return true;
+                
+            case 2:
+                const characters = UI.getCharacters();
+                if (characters.length < 2) {
+                    alert('최소 2명의 캐릭터가 필요합니다.');
+                    return false;
+                }
+                return true;
+                
+            case 3:
+                const ki = document.getElementById('plot-ki').value.trim();
+                const seung = document.getElementById('plot-seung').value.trim();
+                const jeon = document.getElementById('plot-jeon').value.trim();
+                const gyeol = document.getElementById('plot-gyeol').value.trim();
+                
+                if (!ki || !seung || !jeon || !gyeol) {
+                    alert('기승전결을 모두 입력해주세요.');
+                    return false;
+                }
+                return true;
+                
+            default:
+                return true;
+        }
+    }
+
+    saveCurrentStepData() {
+        switch(this.currentStep) {
+            case 1:
+                this.state.setting = document.getElementById('setting-input').value.trim();
+                this.state.isAdultContent = document.getElementById('adult-content-check').checked;
+                break;
+                
+            case 2:
+                this.state.characters = UI.getCharacters();
+                break;
+                
+            case 3:
+                this.state.plot = {
+                    ki: document.getElementById('plot-ki').value.trim(),
+                    seung: document.getElementById('plot-seung').value.trim(),
+                    jeon: document.getElementById('plot-jeon').value.trim(),
+                    gyeol: document.getElementById('plot-gyeol').value.trim()
+                };
+                break;
+        }
+    }
+
+    async startGeneration() {
+        if (!this.validateCurrentStep()) {
+            return;
+        }
+        
+        this.saveCurrentStepData();
+        
+        this.currentStep = 4;
+        UI.showStep(4);
+        
+        this.state.startTime = Date.now();
+        this.state.totalCost = 0;
+        this.state.totalChars = 0;
+        
+        try {
+            await this.phase1_generateOutline();
+            await this.phase2_expandScenes();
+            await this.phase3_editing();
+            
+            this.showCompletion();
+            
+        } catch (error) {
+            UI.showError(`생성 중 오류: ${error.message}`);
+            console.error(error);
+        }
+    }
+
+    async phase1_generateOutline() {
+        UI.addLog('Phase 1: 아웃라인 생성 시작');
+        UI.updateProgress('Phase 1', 0, 1, 0);
+        
+        const prompt = PromptTemplates.outline(
+            this.state.characters,
+            this.state.setting,
+            this.state.plot,
+            this.state.isAdultContent
+        );
+        
+        const result = await this.client.generate(prompt, 'flash');
+        
+        try {
+            const cleaned = result.text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+            const data = JSON.parse(cleaned);
+            this.state.scenes = data.scenes;
+            
+            UI.addLog(`아웃라인 생성 완료: ${this.state.scenes.length}개 씬`);
+            
+            this.state.totalCost += result.cost;
+            UI.updateCounter(this.state.totalCost, this.state.totalChars);
+            UI.updateProgress('Phase 1', 1, 1, 100);
+            
+        } catch (error) {
+            throw new Error('아웃라인 파싱 실패: ' + error.message);
+        }
+    }
+
+    async phase2_expandScenes() {
+        UI.addLog('Phase 2: 씬별 확장 시작');
+        
+        const totalScenes = this.state.scenes.length;
+        let generatedScenes = [];
+        
+        for (let i = 0; i < totalScenes; i++) {
+            const scene = this.state.scenes[i];
+            const percent = ((i + 1) / totalScenes) * 100;
+            
+            UI.updateProgress('Phase 2', i + 1, totalScenes, percent);
+            UI.addLog(`씬 ${i + 1}/${totalScenes} 생성 중: ${scene.title}`);
+            
+            const context = {
+                summary: this.generateSummary(generatedScenes),
+                previousEnding: i > 0 ? this.getLastPart(generatedScenes[i - 1], 300) : ''
+            };
+            
+            const prompt = PromptTemplates.sceneExpansion(scene, this.state.characters, context, this.state.isAdultContent);
+            const result = await this.client.generate(prompt, 'flash');
+            
+            generatedScenes.push(result.text);
+            
+            this.state.totalCost += result.cost;
+            this.state.totalChars += result.text.length;
+            
+            UI.updateCounter(this.state.totalCost, this.state.totalChars);
+            UI.showScenePreview(i + 1, scene.title, result.text);
+            UI.addLog(`씬 ${i + 1} 완료 (${result.text.length}자, ₩${result.cost})`);
+            
+            await this.sleep(1000);
+        }
+        
+        this.state.generatedContent = generatedScenes.join('\n\n');
+        UI.addLog('Phase 2 완료!');
+    }
+
+    async phase3_editing() {
+        UI.addLog('Phase 3: 편집 시작');
+        UI.updateProgress('Phase 3', 0, 1, 0);
+        
+        const prompt = PromptTemplates.editing(
+            this.state.generatedContent,
+            this.state.characters,
+            this.state.plot
+        );
+        
+        const result = await this.client.generate(prompt, 'flash');
+        
+        // 간단히 수정 제안만 받고 원본 유지
+        UI.addLog('편집 제안 완료');
+        
+        this.state.totalCost += result.cost;
+        UI.updateCounter(this.state.totalCost, this.state.totalChars);
+        UI.updateProgress('Phase 3', 1, 1, 100);
+        UI.addLog('Phase 3 완료!');
+    }
+
+    showCompletion() {
+        const elapsed = Date.now() - this.state.startTime;
+        const minutes = Math.floor(elapsed / 60000);
+        const seconds = Math.floor((elapsed % 60000) / 1000);
+        const timeStr = `${minutes}분 ${seconds}초`;
+        
+        this.currentStep = 5;
+        UI.showStep(5);
+        
+        UI.showFinalResults(
+            this.state.totalChars,
+            timeStr,
+            this.state.totalCost
+        );
+        
+        UI.addLog('모든 작업 완료!', 'success');
+    }
+
+    downloadTxt() {
+        const blob = new Blob([this.state.generatedContent], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `소설_${new Date().toISOString().split('T')[0]}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    viewNovel() {
+        const modal = document.getElementById('view-novel-modal');
+        const content = document.getElementById('novel-content');
+        
+        content.textContent = this.state.generatedContent;
+        modal.classList.remove('hidden');
+    }
+
+    generateSummary(scenes) {
+        if (scenes.length === 0) return '이야기의 시작';
+        
+        const recent = scenes.slice(-3).join(' ');
+        return recent.substring(0, 500);
+    }
+
+    getLastPart(text, length) {
+        if (!text) return '';
+        return text.substring(Math.max(0, text.length - length));
+    }
+
+    sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+}
+
+// ==================== Init ====================
+let app;
+document.addEventListener('DOMContentLoaded', () => {
+    app = new NovelGeneratorApp();
+    lucide.createIcons();
+});
+    </script>
+</body>
+</html>
