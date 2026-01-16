@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AU 프로필 자동 생성기</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+            background: #fafafa;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            color: #1f2937;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            max-width: 680px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .header {
+            background: #ffffff;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 32px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #111827;
+        }
+
+        .header p {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .content {
+            padding: 32px;
+        }
+
+        .section {
+            margin-bottom: 32px;
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .section-title svg {
+            width: 16px;
+            height: 16px;
+            stroke: #6b7280;
+        }
+
+        .required {
+            color: #ef4444;
+            font-size: 14px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 8px;
+        }
+
+        input[type="text"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.15s;
+            font-family: inherit;
+            background: #ffffff;
+            color: #1f2937;
+        }
+
+        input[type="text"]:hover,
+        textarea:hover,
+        select:hover {
+            border-color: #9ca3af;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #1f2937;
+            box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+            line-height: 1.6;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #111827;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #000000;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+            margin-bottom: 12px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+            border-color: #d1d5db;
+        }
+
+        .settings-icon {
+            cursor: pointer;
+            position: absolute;
+            top: 32px;
+            right: 32px;
+            width: 36px;
+            height: 36px;
+            background: transparent;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+        }
+
+        .settings-icon:hover {
+            background: #f9fafb;
+            border-color: #d1d5db;
+        }
+
+        .settings-icon svg {
+            width: 18px;
+            height: 18px;
+            stroke: #6b7280;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            background: #ffffff;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 24px;
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #111827;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-header svg {
+            width: 20px;
+            height: 20px;
+            stroke: #6b7280;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .status {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-top: 16px;
+            font-size: 13px;
+            display: none;
+            border: 1px solid;
+        }
+
+        .status.success {
+            background: #f0fdf4;
+            color: #166534;
+            border-color: #bbf7d0;
+        }
+
+        .status.error {
+            background: #fef2f2;
+            color: #991b1b;
+            border-color: #fecaca;
+        }
+
+        .status.loading {
+            background: #f9fafb;
+            color: #374151;
+            border-color: #e5e7eb;
+        }
+
+        .divider {
+            height: 1px;
+            background: #e5e7eb;
+            margin: 24px 0;
+        }
+
+        .info-box {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 13px;
+            color: #6b7280;
+            margin-top: 12px;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .page-list {
+            display: grid;
+            gap: 8px;
+            max-height: 320px;
+            overflow-y: auto;
+            padding: 2px;
+            margin-top: 12px;
+        }
+
+        .page-item {
+            padding: 14px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-size: 14px;
+            background: white;
+        }
+
+        .page-item:hover {
+            border-color: #9ca3af;
+            background: #f9fafb;
+        }
+
+        .page-item.selected {
+            border-color: #111827;
+            background: #f9fafb;
+        }
+
+        .page-item strong {
+            color: #111827;
+        }
+
+        .page-item small {
+            color: #6b7280;
+        }
+
+        .log-box {
+            background: #1f2937;
+            color: #e5e7eb;
+            border-radius: 6px;
+            padding: 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 16px;
+            line-height: 1.5;
+            display: none;
+        }
+
+        .log-box.active {
+            display: block;
+        }
+
+        .log-entry {
+            margin-bottom: 4px;
+        }
+
+        .log-entry.success {
+            color: #86efac;
+        }
+
+        .log-entry.error {
+            color: #fca5a5;
+        }
+
+        .log-entry.info {
+            color: #93c5fd;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 12px;
+            display: none;
+        }
+
+        .progress-bar.active {
+            display: block;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: #111827;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header" style="position: relative;">
+            <div class="settings-icon" onclick="openSettings()">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.25M15.54 15.54l4.24 4.25M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24"/>
+                </svg>
+            </div>
+            <h1>AU 프로필 자동 생성기</h1>
+            <p>AI가 캐릭터 프로필을 자동으로 채워줍니다</p>
+        </div>
+
+        <div class="content">
+            <div class="section">
+                <div class="section-title">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                    페이지 선택
+                    <span class="required">*</span>
+                </div>
+                <button class="btn btn-secondary" onclick="loadPages()">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                        <polyline points="23 4 23 10 17 10"/>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                    </svg>
+                    페이지 목록 불러오기
+                </button>
+                <div id="pageList" class="page-list" style="display: none;"></div>
+                <div id="selectedPageInfo" style="display: none; margin-top: 12px;">
+                    <div class="info-box">
+                        <strong>선택된 페이지:</strong> <span id="selectedPageName"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                        <line x1="8" y1="6" x2="21" y2="6"/>
+                        <line x1="8" y1="12" x2="21" y2="12"/>
+                        <line x1="8" y1="18" x2="21" y2="18"/>
+                        <line x1="3" y1="6" x2="3.01" y2="6"/>
+                        <line x1="3" y1="12" x2="3.01" y2="12"/>
+                        <line x1="3" y1="18" x2="3.01" y2="18"/>
+                    </svg>
+                    기본 정보
+                </div>
+                <div class="input-group">
+                    <label>커플</label>
+                    <input type="text" id="couple" placeholder="켄타우로스X인간">
+                </div>
+                <div class="input-group">
+                    <label>키워드</label>
+                    <input type="text" id="keywords" placeholder="인외, 판타지 (쉼표로 구분)">
+                </div>
+                <div class="input-group">
+                    <label>워닝</label>
+                    <input type="text" id="warning" placeholder="인외">
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">
+                    <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                        <path d="M12 20h9"/>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                    </svg>
+                    추가 설정
+                </div>
+                <textarea id="additionalSettings" placeholder="켄타 세계관에 인간 대진이 들어감.&#10;두길은 숲에서 사냥꾼으로 살고 있음."></textarea>
+            </div>
+
+            <button class="btn btn-primary" onclick="generateProfile()" id="generateBtn">
+                <svg id="btnIcon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                    <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                </svg>
+                <span id="btnText">프로필 생성하기</span>
+                <span id="btnSpinner" style="display: none;" class="loading-spinner"></span>
+            </button>
+
+            <div class="progress-bar" id="progressBar">
+                <div class="progress-bar-fill" id="progressFill"></div>
+            </div>
+
+            <div id="status" class="status"></div>
+            <div id="logBox" class="log-box"></div>
+        </div>
+    </div>
+
+    <!-- 설정 모달 -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>
+                    <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.25M15.54 15.54l4.24 4.25M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24"/>
+                    </svg>
+                    초기 설정
+                </h2>
+            </div>
+            <div class="modal-body">
+                <div class="section">
+                    <div class="section-title">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                        API 설정
+                    </div>
+                    <div class="input-group">
+                        <label>Notion API 토큰 <span class="required">*</span></label>
+                        <input type="text" id="notionToken" placeholder="ntn_...">
+                    </div>
+                    <div class="input-group">
+                        <label>데이터베이스 ID <span class="required">*</span></label>
+                        <input type="text" id="databaseId" placeholder="f2d09544-ba4a-45d7-a156-0db4df453cdf">
+                    </div>
+                    <div class="input-group">
+                        <label>Gemini API 키 <span class="required">*</span></label>
+                        <input type="text" id="geminiKey" placeholder="AIzaSy...">
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="section">
+                    <div class="section-title">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                        </svg>
+                        오리지널 프로필
+                        <span class="required">*</span>
+                    </div>
+                    <div class="input-group">
+                        <label>한두길 프로필</label>
+                        <textarea id="doogilProfile" placeholder="- 나이: 19세&#10;- 성격: #차분함 #냉정함 #은근한애정&#10;- 배경: 평범한 대학생&#10;- 특징: 무표정하지만 속마음은 따뜻함"></textarea>
+                    </div>
+                    <div class="input-group">
+                        <label>박대진 프로필</label>
+                        <textarea id="daejinProfile" placeholder="- 나이: 17세&#10;- 성격: #활발함 #애교많음 #장난꾸러기&#10;- 배경: 고등학생&#10;- 특징: 밝고 사교적임"></textarea>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="saveSettings()">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                        <polyline points="17 21 17 13 7 13 7 21"/>
+                        <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                    저장하고 시작
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedPageId = null;
+        let pageBlocks = null;
+
+        // 초기 로드
+        window.onload = function() {
+            loadSettingsFromStorage();
+            if (!checkSettings()) {
+                openSettings();
+            }
+        };
+
+        function log(message, type = 'info') {
+            const logBox = document.getElementById('logBox');
+            logBox.classList.add('active');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            entry.textContent = `[${timestamp}] ${message}`;
+            logBox.appendChild(entry);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('logBox').innerHTML = '';
+        }
+
+        function setProgress(percent) {
+            document.getElementById('progressBar').classList.add('active');
+            document.getElementById('progressFill').style.width = percent + '%';
+        }
+
+        function hideProgress() {
+            document.getElementById('progressBar').classList.remove('active');
+            document.getElementById('progressFill').style.width = '0%';
+        }
+
+        function openSettings() {
+            document.getElementById('settingsModal').classList.add('active');
+        }
+
+        function saveSettings() {
+            const settings = {
+                notionToken: document.getElementById('notionToken').value,
+                databaseId: document.getElementById('databaseId').value,
+                geminiKey: document.getElementById('geminiKey').value,
+                doogilProfile: document.getElementById('doogilProfile').value,
+                daejinProfile: document.getElementById('daejinProfile').value
+            };
+
+            if (!settings.notionToken || !settings.databaseId || !settings.geminiKey || 
+                !settings.doogilProfile || !settings.daejinProfile) {
+                showStatus('모든 필수 항목을 입력해주세요.', 'error');
+                return;
+            }
+
+            localStorage.setItem('auGeneratorSettings', JSON.stringify(settings));
+            document.getElementById('settingsModal').classList.remove('active');
+            showStatus('설정이 저장되었습니다!', 'success');
+        }
+
+        function loadSettingsFromStorage() {
+            const saved = localStorage.getItem('auGeneratorSettings');
+            if (saved) {
+                const settings = JSON.parse(saved);
+                document.getElementById('notionToken').value = settings.notionToken || '';
+                document.getElementById('databaseId').value = settings.databaseId || '';
+                document.getElementById('geminiKey').value = settings.geminiKey || '';
+                document.getElementById('doogilProfile').value = settings.doogilProfile || '';
+                document.getElementById('daejinProfile').value = settings.daejinProfile || '';
+            }
+        }
+
+        function checkSettings() {
+            const saved = localStorage.getItem('auGeneratorSettings');
+            if (!saved) return false;
+            const settings = JSON.parse(saved);
+            return settings.notionToken && settings.databaseId && settings.geminiKey && 
+                   settings.doogilProfile && settings.daejinProfile;
+        }
+
+        function getSettings() {
+            const saved = localStorage.getItem('auGeneratorSettings');
+            return saved ? JSON.parse(saved) : null;
+        }
+
+        async function loadPages() {
+            const settings = getSettings();
+            if (!settings) {
+                showStatus('먼저 설정을 완료해주세요.', 'error');
+                openSettings();
+                return;
+            }
+
+            showStatus('페이지 목록을 불러오는 중...', 'loading');
+
+            try {
+                const response = await fetch(`https://api.notion.com/v1/databases/${settings.databaseId}/query`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${settings.notionToken}`,
+                        'Notion-Version': '2022-06-28',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Notion API 오류: ' + response.status);
+                }
+
+                const data = await response.json();
+                displayPages(data.results);
+                showStatus('페이지 목록을 불러왔습니다!', 'success');
+            } catch (error) {
+                showStatus('오류: ' + error.message, 'error');
+            }
+        }
+
+        function displayPages(pages) {
+            const pageList = document.getElementById('pageList');
+            pageList.innerHTML = '';
+            pageList.style.display = 'grid';
+
+            pages.forEach(page => {
+                const title = page.properties['이름']?.title[0]?.plain_text || '제목 없음';
+                const couple = page.properties['커플']?.rich_text[0]?.plain_text || '';
+                const keywords = page.properties['키워드']?.multi_select.map(k => k.name).join(', ') || '';
+                const warning = page.properties['warning']?.multi_select.map(w => w.name).join(', ') || '';
+
+                const pageItem = document.createElement('div');
+                pageItem.className = 'page-item';
+                pageItem.innerHTML = `
+                    <strong>${title}</strong>
+                    ${couple ? `<br><small style="color: #666;">커플: ${couple}</small>` : ''}
+                `;
+                pageItem.onclick = () => selectPage(page.id, title, couple, keywords, warning, pageItem);
+                pageList.appendChild(pageItem);
+            });
+        }
+
+        function selectPage(pageId, title, couple, keywords, warning, element) {
+            document.querySelectorAll('.page-item').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+
+            selectedPageId = pageId;
+            document.getElementById('selectedPageName').textContent = title;
+            document.getElementById('selectedPageInfo').style.display = 'block';
+            document.getElementById('couple').value = couple;
+            document.getElementById('keywords').value = keywords;
+            document.getElementById('warning').value = warning;
+        }
+
+        /**
+         * Notion 블록 가져오기 (재귀)
+         */
+        async function getPageBlocks(blockId, settings, allBlocks = []) {
+            const response = await fetch(`https://api.notion.com/v1/blocks/${blockId}/children`, {
+                headers: {
+                    'Authorization': `Bearer ${settings.notionToken}`,
+                    'Notion-Version': '2022-06-28'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('블록 가져오기 실패: ' + response.status);
+            }
+
+            const data = await response.json();
+            
+            for (const block of data.results) {
+                allBlocks.push(block);
+                
+                // 자식 블록이 있으면 재귀 호출
+                if (block.has_children) {
+                    await getPageBlocks(block.id, settings, allBlocks);
+                }
+            }
+
+            return allBlocks;
+        }
+
+        /**
+         * 테이블 행 찾기
+         */
+        function findTableRow(blocks, searchText) {
+            for (const block of blocks) {
+                if (block.type === 'table_row') {
+                    const cells = block.table_row.cells;
+                    if (cells && cells[0]) {
+                        const cellText = cells[0].map(t => t.plain_text).join('').trim();
+                        if (cellText === searchText) {
+                            return block;
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        /**
+         * 테이블 행 업데이트
+         */
+        async function updateTableRow(blockId, cellIndex, content, settings) {
+            // 먼저 현재 행을 가져옴
+            const response = await fetch(`https://api.notion.com/v1/blocks/${blockId}`, {
+                headers: {
+                    'Authorization': `Bearer ${settings.notionToken}`,
+                    'Notion-Version': '2022-06-28'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('행 가져오기 실패');
+            }
+
+            const row = await response.json();
+            const cells = row.table_row.cells;
+
+            // 해당 셀 업데이트
+            cells[cellIndex] = [{ type: 'text', text: { content: content } }];
+
+            // 행 업데이트
+            const updateResponse = await fetch(`https://api.notion.com/v1/blocks/${blockId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `Bearer ${settings.notionToken}`,
+                    'Notion-Version': '2022-06-28',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    table_row: {
+                        cells: cells
+                    }
+                })
+            });
+
+            if (!updateResponse.ok) {
+                const errorText = await updateResponse.text();
+                throw new Error('행 업데이트 실패: ' + errorText);
+            }
+
+            return await updateResponse.json();
+        }
+
+        async function generateProfile() {
+            if (!selectedPageId) {
+                showStatus('먼저 페이지를 선택해주세요.', 'error');
+                return;
+            }
+
+            const settings = getSettings();
+            const couple = document.getElementById('couple').value;
+            const keywords = document.getElementById('keywords').value;
+            const warning = document.getElementById('warning').value;
+            const additionalSettings = document.getElementById('additionalSettings').value;
+
+            const btn = document.getElementById('generateBtn');
+            btn.disabled = true;
+            document.getElementById('btnIcon').style.display = 'none';
+            document.getElementById('btnText').textContent = '생성 중...';
+            document.getElementById('btnSpinner').style.display = 'inline-block';
+            showStatus('프로필을 생성하고 있습니다...', 'loading');
+            clearLog();
+            setProgress(0);
+
+            try {
+                // 1단계: Gemini로 프로필 생성
+                log('Gemini API 호출 중...', 'info');
+                setProgress(10);
+                
+                const prompt = `너는 AU 캐릭터 프로필 작성 전문가야.
+
+[기본 정보]
+- 커플: ${couple}
+- 키워드: ${keywords}
+- 워닝: ${warning}
+
+[오리지널 캐릭터 정보]
+한두길:
+${settings.doogilProfile}
+
+박대진:
+${settings.daejinProfile}
+
+${additionalSettings ? `[사용자 추가 설정]\n${additionalSettings}` : ''}
+
+[생성 요청]
+위 정보를 바탕으로 이 AU의 프로필을 작성해줘.
+
+아래 형식의 JSON으로 응답해:
+{
+  "엔딩": "이 AU의 엔딩 (1-2문장)",
+  "세계관": "세계관 설명 (2-3문장)",
+  "첫만남": "두 캐릭터가 처음 만난 상황 (2-3문장)",
+  "끌리게_된_사건": "서로에게 끌리게 된 계기 (2-3문장)",
+  "두길": {
+    "배경": "이 AU에서의 개인 배경",
+    "성격": "#키워드1 #키워드2 #키워드3\\n성격 설명 (3줄)",
+    "기타": "추가 특징",
+    "취미": "취미",
+    "특기": "특기",
+    "가족": "가족 관계",
+    "like": "좋아하는 것",
+    "hate": "싫어하는 것",
+    "말투": "1. 신났을 때\\n2. 화났을 때\\n3. 슬플 때\\n4. 분노할 때\\n5. 부탁할 때\\n큰 특징:",
+    "체격": "체격 설명",
+    "손크기": "손 크기",
+    "발크기": "발 크기",
+    "과거_생각": "본인 과거에 대한 생각",
+    "첫만남_생각": "첫만남 당시 상대에 대한 생각",
+    "현재_생각": "현재 상대에 대한 생각",
+    "대진은": "대진에 대한 생각",
+    "좋아": "상대의 어떤 점을 좋아하는지",
+    "싫어": "상대의 어떤 점을 싫어하는지",
+    "노래": "이 캐릭터를 나타내는 노래 (선택)"
+  },
+  "대진": {
+    // 두길과 동일한 구조로 대진 프로필
+  }
+}
+
+반드시 유효한 JSON만 출력하고, 다른 텍스트는 포함하지 마.`;
+
+                const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${settings.geminiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{ text: prompt }]
+                        }]
+                    })
+                });
+
+                if (!geminiResponse.ok) {
+                    const errorText = await geminiResponse.text();
+                    throw new Error('Gemini API 오류: ' + errorText);
+                }
+
+                const geminiData = await geminiResponse.json();
+                log('Gemini 응답 받음', 'success');
+                setProgress(30);
+                
+                const generatedText = geminiData.candidates[0].content.parts[0].text;
+                
+                let profileData;
+                try {
+                    const jsonText = generatedText.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+                    profileData = JSON.parse(jsonText);
+                    log('프로필 데이터 파싱 완료', 'success');
+                } catch (e) {
+                    console.error('JSON 파싱 오류:', generatedText);
+                    throw new Error('AI 응답을 파싱할 수 없습니다: ' + e.message);
+                }
+
+                setProgress(40);
+
+                // 2단계: Notion 페이지 블록 구조 가져오기
+                log('페이지 블록 구조 분석 중...', 'info');
+                const blocks = await getPageBlocks(selectedPageId, settings);
+                log(`총 ${blocks.length}개 블록 발견`, 'success');
+                setProgress(50);
+
+                // 3단계: Notion 페이지 속성 업데이트 (엔딩)
+                log('페이지 속성 업데이트 중...', 'info');
+                await fetch(`https://api.notion.com/v1/pages/${selectedPageId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `Bearer ${settings.notionToken}`,
+                        'Notion-Version': '2022-06-28',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        properties: {
+                            '엔딩': {
+                                rich_text: [{ text: { content: profileData.엔딩 } }]
+                            }
+                        }
+                    })
+                });
+                log('엔딩 업데이트 완료', 'success');
+                setProgress(60);
+
+                // 4단계: 테이블 셀 업데이트
+                log('테이블 셀 업데이트 시작...', 'info');
+                
+                // 세계관/첫만남/끌리게 된 사건 업데이트
+                const 세계관Row = findTableRow(blocks, '세계관');
+                if (세계관Row) {
+                    await updateTableRow(세계관Row.id, 1, profileData.세계관, settings);
+                    log('세계관 업데이트 완료', 'success');
+                }
+                setProgress(65);
+
+                const 첫만남Row = findTableRow(blocks, '첫만남');
+                if (첫만남Row) {
+                    await updateTableRow(첫만남Row.id, 1, profileData.첫만남, settings);
+                    log('첫만남 업데이트 완료', 'success');
+                }
+                setProgress(70);
+
+                const 끌리게Row = findTableRow(blocks, '끌리게 된 사건');
+                if (끌리게Row) {
+                    await updateTableRow(끌리게Row.id, 1, profileData.끌리게_된_사건, settings);
+                    log('끌리게 된 사건 업데이트 완료', 'success');
+                }
+                setProgress(75);
+
+                // 각 캐릭터 프로필 업데이트
+                const profileFields = ['배경', '성격', '기타', '취미', '특기', '가족', 'like', 'hate'];
+                
+                for (const field of profileFields) {
+                    const row = findTableRow(blocks, field);
+                    if (row && profileData.두길[field]) {
+                        await updateTableRow(row.id, 1, profileData.두길[field], settings);
+                        log(`두길 ${field} 업데이트 완료`, 'success');
+                    }
+                }
+                setProgress(90);
+
+                log('✨ 모든 업데이트 완료!', 'success');
+                setProgress(100);
+                
+                showStatus('프로필이 성공적으로 생성되었습니다! Notion 페이지를 확인해보세요.', 'success');
+                
+                setTimeout(() => {
+                    hideProgress();
+                }, 2000);
+                
+            } catch (error) {
+                showStatus('오류: ' + error.message, 'error');
+                log('오류 발생: ' + error.message, 'error');
+                console.error(error);
+                hideProgress();
+            } finally {
+                btn.disabled = false;
+                document.getElementById('btnIcon').style.display = 'inline';
+                document.getElementById('btnText').textContent = '프로필 생성하기';
+                document.getElementById('btnSpinner').style.display = 'none';
+            }
+        }
+
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status ' + type;
+            status.style.display = 'block';
+
+            if (type === 'success' || type === 'error') {
+                setTimeout(() => {
+                    if (type !== 'success') {
+                        status.style.display = 'none';
+                    }
+                }, 8000);
+            }
+        }
+    </script>
+</body>
+</html>
