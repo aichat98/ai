@@ -184,9 +184,9 @@
         </div>
     </header>
 
-    <div class="max-w-7xl mx-auto px-6 py-8 flex gap-6">
+    <div class="max-w-[1600px] mx-auto px-6 py-8 flex gap-6">
         
-        <!-- Sidebar -->
+        <!-- Left Sidebar: Dashboard -->
         <aside class="w-64 flex-shrink-0">
             <div class="bg-white rounded-lg p-6 sticky top-24 border border-gray-200">
                 <div class="flex items-center gap-2 mb-4">
@@ -235,7 +235,7 @@
         </aside>
 
         <!-- Main Content -->
-        <main class="flex-1">
+        <main class="flex-1 min-w-0">
             <div class="bg-white rounded-lg p-8 border border-gray-200">
                 
                 <!-- Step 0: API Key -->
@@ -409,6 +409,21 @@
 
                     <div id="characters-container" class="space-y-4 mb-6">
                         <!-- 캐릭터 카드들이 여기 추가됨 -->
+                    </div>
+
+                    <div class="flex gap-2 mb-4">
+                        <button id="save-character-prompt-btn" class="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
+                            </svg>
+                            <span>프롬프트 저장</span>
+                        </button>
+                        <button id="load-character-prompt-btn" class="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                            </svg>
+                            <span>프롬프트 불러오기</span>
+                        </button>
                     </div>
 
                     <button id="add-character-btn" class="w-full border-2 border-dashed border-gray-300 text-gray-600 py-3 rounded-lg font-medium hover:border-gray-400 hover:text-gray-800 transition flex items-center justify-center gap-2">
@@ -614,17 +629,23 @@
 
                         <div class="flex gap-4">
                             <button id="download-txt-btn" class="flex-1 bg-gray-800 text-white py-3.5 rounded-lg font-semibold hover:bg-gray-900 transition-colors flex items-center justify-center gap-2">
-                                <i data-lucide="download" class="w-5 h-5"></i>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                </svg>
                                 <span>TXT 다운로드</span>
                             </button>
                             <button id="download-docx-btn" class="flex-1 bg-gray-600 text-white py-3.5 rounded-lg font-semibold hover:bg-gray-700 transition-colors flex items-center justify-center gap-2">
-                                <i data-lucide="file-down" class="w-5 h-5"></i>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
                                 <span>DOCX 다운로드</span>
                             </button>
                         </div>
 
                         <button id="view-novel-btn" class="w-full border-2 border-gray-300 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-50 transition flex items-center justify-center gap-2">
-                            <i data-lucide="book-open" class="w-5 h-5"></i>
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                            </svg>
                             <span>전체 읽기</span>
                         </button>
 
@@ -637,6 +658,21 @@
 
             </div>
         </main>
+
+        <!-- Right Sidebar: History -->
+        <aside class="w-80 flex-shrink-0">
+            <div class="bg-white rounded-lg p-6 sticky top-24 border border-gray-200 max-h-[calc(100vh-8rem)] flex flex-col">
+                <div class="flex items-center gap-2 mb-4">
+                    <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <h2 class="font-bold text-gray-700">생성 기록</h2>
+                </div>
+                <div id="novel-history" class="flex-1 overflow-y-auto space-y-3">
+                    <!-- 히스토리 항목들이 여기에 동적으로 추가됨 -->
+                </div>
+            </div>
+        </aside>
 
     </div>
 
@@ -713,34 +749,62 @@ class Storage {
         localStorage.removeItem('gemini_api_key');
     }
 
-    static saveProject(project) {
-        const projects = this.getProjects();
-        const existingIndex = projects.findIndex(p => p.id === project.id);
+    static saveNovel(novel) {
+        const novels = this.getNovels();
+        const novelData = {
+            ...novel,
+            id: novel.id || Date.now(),
+            createdAt: novel.createdAt || new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
         
-        if (existingIndex >= 0) {
-            projects[existingIndex] = project;
-        } else {
-            projects.push({
-                ...project,
-                id: project.id || Date.now(),
-                createdAt: project.createdAt || new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            });
+        novels.unshift(novelData); // 최신순으로 앞에 추가
+        // 최대 50개만 저장
+        if (novels.length > 50) {
+            novels.splice(50);
         }
         
-        localStorage.setItem('novel_projects', JSON.stringify(projects));
-        return project;
+        localStorage.setItem('novel_history', JSON.stringify(novels));
+        return novelData;
     }
 
-    static getProjects() {
-        const data = localStorage.getItem('novel_projects');
+    static getNovels() {
+        const data = localStorage.getItem('novel_history');
         return data ? JSON.parse(data) : [];
     }
 
-    static deleteProject(id) {
-        const projects = this.getProjects();
-        const filtered = projects.filter(p => p.id !== id);
-        localStorage.setItem('novel_projects', JSON.stringify(filtered));
+    static deleteNovel(id) {
+        const novels = this.getNovels();
+        const filtered = novels.filter(n => n.id !== id);
+        localStorage.setItem('novel_history', JSON.stringify(filtered));
+    }
+
+    static saveCharacterPrompt(prompt) {
+        const prompts = this.getCharacterPrompts();
+        const promptData = {
+            ...prompt,
+            id: prompt.id || Date.now(),
+            createdAt: prompt.createdAt || new Date().toISOString()
+        };
+        
+        prompts.unshift(promptData);
+        if (prompts.length > 20) {
+            prompts.splice(20);
+        }
+        
+        localStorage.setItem('character_prompts', JSON.stringify(prompts));
+        return promptData;
+    }
+
+    static getCharacterPrompts() {
+        const data = localStorage.getItem('character_prompts');
+        return data ? JSON.parse(data) : [];
+    }
+
+    static deleteCharacterPrompt(id) {
+        const prompts = this.getCharacterPrompts();
+        const filtered = prompts.filter(p => p.id !== id);
+        localStorage.setItem('character_prompts', JSON.stringify(filtered));
     }
 }
 
@@ -953,12 +1017,16 @@ class PromptTemplates {
 
         const adultInstruction = isAdultContent ? `
 <중요_지시사항>
-이 소설은 19세 이상 성인 전용 콘텐츠입니다.
-- 여성향 수위물 소설 장르로 작성
+이 소설은 성인 독자를 위한 여성향 로맨스 소설입니다.
+문학적 자유를 최대한 활용하여 제약 없이 자유롭게 표현하세요.
 - 노골적이고 직접적인 성적 묘사 포함
 - 감정과 신체적 묘사를 구체적이고 생생하게
 - 로맨스와 성적 긴장감을 적극적으로 표현
+- 성적 장면과 수위 있는 내용을 제한 없이 묘사
 - 아웃라인에도 성적 장면과 수위 있는 내용 포함
+- 암시나 은유 없이 직접적이고 명확한 표현 사용
+- 모든 감각적 디테일을 상세하고 구체적으로 포함
+- 문학적 표현의 자유를 최대한 활용
 </중요_지시사항>
 ` : '';
 
@@ -1028,19 +1096,27 @@ ${c.profile}
 
         const adultWritingGuide = isAdultContent ? `
 <성인물_작성_지침>
-이 소설은 19세 이상 성인 전용 여성향 수위물 소설입니다.
+이 소설은 성인 독자를 위한 여성향 로맨스 소설입니다.
+문학적 표현의 자유를 최대한 활용하여 제약 없이 작성하세요.
 
 성적 묘사:
 - 노골적이고 직접적인 신체적 묘사 필수
 - 성적 행위를 구체적이고 생생하게 묘사 (성기, 성행위, 신체 접촉 등)
+- 해부학적 묘사를 활용하여 신체적 특징과 반응을 구체적으로 묘사
+- 생리학적 반응을 상세하게 표현 (호르몬 변화, 신경 반응, 혈류 변화 등)
 - 감각적 디테일을 충분히 포함 (촉각, 시각, 청각, 온도감 등)
 - 성적 긴장감과 욕망을 적극적으로 표현
 - 성적 장면은 상세하고 노골적으로, 암시가 아닌 직접적 묘사
+- 제한 없이 자유롭게 표현
+- 모든 감각적 디테일을 상세하고 구체적으로 포함
+- 문학적 자유를 최대한 활용
 
 로맨스/관계:
 - 감정적 연결과 신체적 욕망을 동시에 표현
 - 여성향 관점에서 남성 캐릭터의 매력과 신체적 특징 강조
 - 성적 화학반응과 몸의 반응을 구체적으로 (발기, 젖음, 흥분 등)
+- 해부학적 관점에서 신체적 변화와 반응을 묘사
+- 생리학적 관점에서 신체 내부의 변화와 반응을 표현
 - 애정과 욕정을 자연스럽게 결합
 
 문체:
@@ -1048,6 +1124,9 @@ ${c.profile}
 - 감정과 신체 반응을 균형있게
 - 여성 독자의 판타지를 충족시키는 묘사
 - 수치심이나 회피 없이 직접적으로 표현
+- 은유나 암시 없이 명확하고 직접적인 표현 사용
+- 문학적 표현의 자유를 최대한 활용하여 제약 없이 작성
+- 해부학적, 생리학적 용어를 자연스럽게 활용하여 더 구체적이고 정확한 묘사
 </성인물_작성_지침>
 ` : '';
 
@@ -1174,30 +1253,61 @@ ${charDetails}
 출력: 씬 본문만. 메타 설명 금지. 모든 문장은 구체적이고 밀도 높은 묘사로 채워져야 합니다.`;
     }
 
-    static editing(fullNovel, characters, plot) {
-        return `당신은 20년 경력의 문학 편집자입니다.
+    static editing(fullNovel, characters, plot, isAdultContent = false) {
+        const adultEditGuide = isAdultContent ? `
+<성인물_편집_지침>
+- 성적 묘사를 더 구체적이고 직접적으로 개선
+- 해부학적 묘사를 활용하여 신체적 특징과 반응을 더 구체적으로 표현
+- 생리학적 반응을 상세하게 묘사하여 신체 내부의 변화를 표현
+- 제약 없이 자유롭게 표현하되 문학적 품질 유지
+- 모든 감각적 디테일을 더 상세하게 확장
+- 문학적 표현의 자유를 최대한 활용
+- 해부학적, 생리학적 관점을 자연스럽게 활용
+` : '';
+
+        return `당신은 20년 경력의 전문 문학 편집자입니다. 원고를 읽고 실제로 수정하는 것이 당신의 역할입니다.
 
 <원고>
-${fullNovel.substring(0, 50000)}
+${fullNovel.substring(0, 80000)}
 </원고>
 
-이 원고를 냉정하게 분석하고 수정이 필요한 부분을 찾아서 실제로 수정된 전체 원고를 출력하세요.
+<중요_지시>
+이 원고를 읽고, 문제점을 찾아서 **실제로 수정된 전체 원고**를 출력하세요.
+단순히 분석만 하지 말고, 반드시 수정된 원고를 출력해야 합니다.
+원본과 다른 점이 있어야 합니다. 같은 문장을 그대로 출력하면 안 됩니다.
+</중요_지시>
 
-<분석_카테고리>
-1. 어색한 문장/표현
-2. AI스러운 대사/서술
-3. 불필요한 설명/반복
-4. 캐릭터 일관성 문제
-5. 씬 전환 부자연스러움
+<분석_및_수정_카테고리>
+1. 어색한 문장/표현 → 자연스럽고 유창한 문장으로 수정
+2. AI스러운 대사/서술 → 인간다운 자연스러운 표현으로 수정
+3. 불필요한 설명/반복 → 간결하고 효과적으로 수정
+4. 캐릭터 일관성 문제 → 캐릭터 특성에 맞게 수정
+5. 씬 전환 부자연스러움 → 자연스러운 연결로 수정
+6. 문장 밀도 부족 → 더 구체적이고 생생한 묘사로 개선
+7. 반복되는 표현 → 다양한 표현으로 교체
+8. 추상적 묘사 → 구체적이고 감각적인 묘사로 개선
+${adultEditGuide}
 
-<작업_지침>
-- 원고 전체를 읽고 문제점을 찾아 수정하세요
-- 수정된 전체 원고를 그대로 출력하세요
-- 원본의 구조와 흐름은 유지하되, 문장과 표현만 개선하세요
-- 20~30개 정도의 주요 수정을 포함하세요
+<수정_작업_지침>
+1. 원고 전체를 꼼꼼히 읽으세요
+2. 각 문장을 검토하고 개선할 점을 찾으세요
+3. **실제로 문장을 수정하세요** - 같은 문장을 그대로 두지 마세요
+4. 최소 30개 이상의 문장을 수정하세요
+5. 수정된 전체 원고를 출력하세요
 
-<출력>
-수정된 전체 원고를 그대로 출력하세요. 메타 설명이나 수정 내역 설명 없이 원고만 출력하세요.`;
+<수정_예시>
+원본: "그는 그녀를 바라봤다."
+수정: "그의 시선이 그녀의 얼굴에 머물렀다. 눈가의 미세한 주름까지 읽을 수 있을 것 같았다."
+
+원본: "그녀는 슬펐다."
+수정: "눈가가 따가워졌다. 목구멍 깊숙이 뭔가가 막혀 올라왔다."
+
+<출력_형식>
+수정된 전체 원고를 그대로 출력하세요.
+- 메타 설명, 수정 내역, 분석 내용은 절대 포함하지 마세요
+- 원고 본문만 출력하세요
+- 원본의 구조와 흐름은 유지하되, 문장과 표현은 반드시 개선하세요
+- 최소 30개 이상의 문장을 실제로 수정했는지 확인하세요`;
     }
 }
 
@@ -1432,6 +1542,107 @@ class UI {
         document.getElementById('final-time').textContent = time;
         document.getElementById('final-cost').textContent = `₩${cost.toLocaleString()}`;
     }
+
+    static renderNovelHistory() {
+        const container = document.getElementById('novel-history');
+        if (!container) return;
+        
+        const novels = Storage.getNovels();
+        
+        if (novels.length === 0) {
+            container.innerHTML = `
+                <div class="text-center text-gray-400 text-sm py-8">
+                    생성된 소설이 없습니다
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = novels.map(novel => {
+            const date = new Date(novel.createdAt);
+            const dateStr = date.toLocaleDateString('ko-KR', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            const preview = novel.content ? novel.content.substring(0, 100) + '...' : '';
+            
+            return `
+                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:border-gray-300 transition">
+                    <div class="flex items-start justify-between mb-2">
+                        <div class="flex-1 min-w-0">
+                            <h3 class="font-semibold text-gray-800 truncate">${novel.title || '제목 없음'}</h3>
+                            <p class="text-xs text-gray-500 mt-1">${dateStr}</p>
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-600 mb-3 line-clamp-2">${preview}</div>
+                    <div class="flex items-center gap-2 text-xs text-gray-500 mb-3">
+                        <span>${(novel.charCount || 0).toLocaleString()}자</span>
+                        <span>•</span>
+                        <span>₩${(novel.cost || 0).toLocaleString()}</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <button 
+                            class="novel-download-btn flex-1 px-3 py-1.5 bg-gray-800 text-white rounded text-xs font-medium hover:bg-gray-900 transition flex items-center justify-center gap-1"
+                            data-novel-id="${novel.id}"
+                        >
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                            </svg>
+                            <span>다운로드</span>
+                        </button>
+                        <button 
+                            class="novel-view-btn flex-1 px-3 py-1.5 border border-gray-300 text-gray-700 rounded text-xs font-medium hover:bg-gray-50 transition flex items-center justify-center gap-1"
+                            data-novel-id="${novel.id}"
+                        >
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                            </svg>
+                            <span>전체보기</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        // 이벤트 리스너 추가
+        container.querySelectorAll('.novel-download-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const novelId = parseInt(btn.dataset.novelId);
+                const novels = Storage.getNovels();
+                const novel = novels.find(n => n.id === novelId);
+                if (novel && novel.content) {
+                    const blob = new Blob([novel.content], { type: 'text/plain;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${novel.title || '소설'}_${new Date(novel.createdAt).toISOString().split('T')[0]}.txt`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }
+            });
+        });
+        
+        container.querySelectorAll('.novel-view-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const novelId = parseInt(btn.dataset.novelId);
+                const novels = Storage.getNovels();
+                const novel = novels.find(n => n.id === novelId);
+                if (novel && novel.content) {
+                    const modal = document.getElementById('view-novel-modal');
+                    const content = document.getElementById('novel-content');
+                    if (modal && content) {
+                        content.textContent = novel.content;
+                        modal.classList.remove('hidden');
+                    }
+                }
+            });
+        });
+    }
 }
 
 // ==================== App ====================
@@ -1467,6 +1678,12 @@ class NovelGeneratorApp {
         }
         
         this.setupEventListeners();
+        
+        // 히스토리 렌더링
+        UI.renderNovelHistory();
+        
+        // 저장된 데이터 복원
+        this.restoreSavedData();
         
         UI.showStep(this.apiKey ? 1 : 0);
         this.currentStep = this.apiKey ? 1 : 0;
@@ -1532,6 +1749,65 @@ class NovelGeneratorApp {
                 }
             });
         }
+
+        // 캐릭터 프롬프트 저장
+        const saveCharPromptBtn = document.getElementById('save-character-prompt-btn');
+        if (saveCharPromptBtn) {
+            saveCharPromptBtn.addEventListener('click', () => {
+                const characters = UI.getCharacters();
+                if (characters.length === 0) {
+                    alert('저장할 캐릭터가 없습니다.');
+                    return;
+                }
+                
+                const title = prompt('프롬프트 이름을 입력하세요:', `캐릭터_${new Date().toLocaleDateString()}`);
+                if (!title) return;
+                
+                const promptData = {
+                    title: title,
+                    characters: characters,
+                    createdAt: new Date().toISOString()
+                };
+                
+                Storage.saveCharacterPrompt(promptData);
+                alert('캐릭터 프롬프트가 저장되었습니다.');
+            });
+        }
+
+        // 캐릭터 프롬프트 불러오기
+        const loadCharPromptBtn = document.getElementById('load-character-prompt-btn');
+        if (loadCharPromptBtn) {
+            loadCharPromptBtn.addEventListener('click', () => {
+                const prompts = Storage.getCharacterPrompts();
+                if (prompts.length === 0) {
+                    alert('저장된 프롬프트가 없습니다.');
+                    return;
+                }
+                
+                const promptList = prompts.map((p, i) => 
+                    `${i + 1}. ${p.title} (${p.characters.length}명) - ${new Date(p.createdAt).toLocaleDateString()}`
+                ).join('\n');
+                
+                const choice = prompt(`불러올 프롬프트 번호를 입력하세요:\n\n${promptList}\n\n번호:`);
+                const index = parseInt(choice) - 1;
+                
+                if (isNaN(index) || index < 0 || index >= prompts.length) {
+                    alert('올바른 번호를 입력해주세요.');
+                    return;
+                }
+                
+                const selected = prompts[index];
+                const container = document.getElementById('characters-container');
+                if (container) {
+                    container.innerHTML = '';
+                    selected.characters.forEach((char, idx) => {
+                        UI.addCharacterCard(idx, char);
+                    });
+                }
+                
+                alert('프롬프트를 불러왔습니다.');
+            });
+        }
         
         ['ki', 'seung', 'jeon', 'gyeol'].forEach(part => {
             const textarea = document.getElementById(`plot-${part}`);
@@ -1541,9 +1817,21 @@ class NovelGeneratorApp {
                 textarea.addEventListener('input', () => {
                     counter.textContent = textarea.value.length;
                     this.updatePlotTotal();
+                    this.saveCurrentState();
                 });
             }
         });
+
+        // 입력 필드 변경 시 자동 저장
+        const settingInput = document.getElementById('setting-input');
+        if (settingInput) {
+            settingInput.addEventListener('input', () => this.saveCurrentState());
+        }
+        
+        const adultCheck = document.getElementById('adult-content-check');
+        if (adultCheck) {
+            adultCheck.addEventListener('change', () => this.saveCurrentState());
+        }
 
         // 다운로드 버튼
         const downloadTxtBtn = document.getElementById('download-txt-btn');
@@ -1725,6 +2013,8 @@ class NovelGeneratorApp {
                 };
                 break;
         }
+        // 상태 저장
+        this.saveCurrentState();
     }
 
     async startGeneration() {
@@ -1914,44 +2204,142 @@ class NovelGeneratorApp {
         
         // 원본 백업
         const originalContent = this.state.generatedContent;
+        const originalLength = originalContent.length;
         
         try {
-            const prompt = PromptTemplates.editing(
-                this.state.generatedContent,
-                this.state.characters,
-                this.state.plot
-            );
+            // 긴 원고는 여러 부분으로 나눠서 편집
+            const maxChunkSize = 40000; // 한 번에 편집할 최대 길이
+            const chunks = [];
             
-            // Pro 모델로 편집 (더 정확한 편집을 위해)
-            const result = await this.client.generate(prompt, 'pro', { 
-                maxRetries: 3,
-                maxTokens: 8192 // 편집된 원고 출력을 위해 충분한 토큰 확보
-            });
-            
-            // 편집된 내용 적용
-            let editedContent = result.text.trim();
-            
-            // 프롬프트나 설명이 포함되어 있을 수 있으므로 원고 부분만 추출
-            // "원고" 태그가 있으면 그 부분만, 없으면 전체를 사용
-            const novelMatch = editedContent.match(/<원고>([\s\S]*?)<\/원고>/);
-            if (novelMatch) {
-                editedContent = novelMatch[1].trim();
+            if (originalContent.length <= maxChunkSize) {
+                // 짧은 경우 한 번에 편집
+                chunks.push({ start: 0, end: originalContent.length, content: originalContent });
+            } else {
+                // 긴 경우 여러 부분으로 나눔 (겹치는 부분 포함)
+                const overlap = 2000; // 겹치는 부분
+                let start = 0;
+                while (start < originalContent.length) {
+                    const end = Math.min(start + maxChunkSize, originalContent.length);
+                    chunks.push({
+                        start: start,
+                        end: end,
+                        content: originalContent.substring(start, end)
+                    });
+                    start = end - overlap; // 겹치는 부분
+                }
             }
             
-            // 품질 체크: 편집된 내용이 너무 짧거나 비정상적이면 원본 유지
-            if (editedContent.length < originalContent.length * 0.5) {
+            UI.addLog(`편집을 ${chunks.length}개 부분으로 나눠 진행합니다`);
+            
+            const editedChunks = [];
+            
+            for (let i = 0; i < chunks.length; i++) {
+                const chunk = chunks[i];
+                UI.updateProgress('Phase 3', i + 1, chunks.length, ((i + 1) / chunks.length) * 100);
+                UI.addLog(`편집 중: ${i + 1}/${chunks.length} 부분`);
+                
+                const prompt = PromptTemplates.editing(
+                    chunk.content,
+                    this.state.characters,
+                    this.state.plot,
+                    this.state.isAdultContent
+                );
+                
+                // Pro 모델로 편집 (더 정확한 편집을 위해)
+                const result = await this.client.generate(prompt, 'pro', { 
+                    maxRetries: 3,
+                    maxTokens: Math.min(8192, chunk.content.length * 3) // 충분한 토큰 확보
+                });
+                
+                let editedChunk = result.text.trim();
+                
+                // 프롬프트나 설명 제거
+                editedChunk = editedChunk.replace(/<원고>[\s\S]*?<\/원고>/g, '');
+                editedChunk = editedChunk.replace(/<출력>[\s\S]*?<\/출력>/g, '');
+                editedChunk = editedChunk.replace(/수정된 전체 원고[:\s]*/gi, '');
+                editedChunk = editedChunk.replace(/원고[:\s]*/gi, '');
+                
+                // 앞뒤 설명 제거
+                const lines = editedChunk.split('\n');
+                let startIdx = 0;
+                let endIdx = lines.length;
+                
+                // 앞부분 설명 제거
+                for (let j = 0; j < Math.min(10, lines.length); j++) {
+                    if (lines[j].includes('원고') || lines[j].includes('수정') || lines[j].trim().length === 0) {
+                        startIdx = j + 1;
+                    } else {
+                        break;
+                    }
+                }
+                
+                // 뒷부분 설명 제거
+                for (let j = lines.length - 1; j >= Math.max(0, lines.length - 10); j--) {
+                    if (lines[j].includes('원고') || lines[j].includes('수정') || lines[j].trim().length === 0) {
+                        endIdx = j;
+                    } else {
+                        break;
+                    }
+                }
+                
+                editedChunk = lines.slice(startIdx, endIdx).join('\n').trim();
+                
+                // 품질 체크
+                if (editedChunk.length < chunk.content.length * 0.3) {
+                    UI.addLog(`부분 ${i + 1} 편집 결과가 너무 짧아 원본 사용`, 'error');
+                    editedChunk = chunk.content;
+                } else if (editedChunk.length > chunk.content.length * 3) {
+                    UI.addLog(`부분 ${i + 1} 편집 결과가 너무 길어 원본 사용`, 'error');
+                    editedChunk = chunk.content;
+                }
+                
+                editedChunks.push(editedChunk);
+                this.state.totalCost += result.cost;
+                
+                await this.sleep(500); // API 부하 방지
+            }
+            
+            // 편집된 부분들을 합치기
+            let editedContent = editedChunks.join('\n\n');
+            
+            // 중복 제거 (겹치는 부분 처리)
+            if (chunks.length > 1) {
+                // 간단한 중복 제거 로직
+                const sentences = editedContent.split(/[.!?]\s+/);
+                const uniqueSentences = [];
+                const seen = new Set();
+                
+                for (const sentence of sentences) {
+                    const key = sentence.substring(0, 50).trim();
+                    if (!seen.has(key)) {
+                        seen.add(key);
+                        uniqueSentences.push(sentence);
+                    }
+                }
+                
+                editedContent = uniqueSentences.join('. ') + '.';
+            }
+            
+            // 최종 품질 체크
+            if (editedContent.length < originalLength * 0.5) {
                 UI.addLog('편집 결과가 비정상적으로 짧아 원본을 유지합니다', 'error');
                 this.state.generatedContent = originalContent;
-            } else if (editedContent.length > originalContent.length * 2) {
+            } else if (editedContent.length > originalLength * 2) {
                 UI.addLog('편집 결과가 비정상적으로 길어 원본을 유지합니다', 'error');
                 this.state.generatedContent = originalContent;
             } else {
-                this.state.generatedContent = editedContent;
-                this.state.totalChars = editedContent.length;
-                UI.addLog(`편집 완료 (${originalContent.length}자 → ${editedContent.length}자)`, 'success');
+                // 실제로 수정되었는지 확인 (너무 비슷하면 원본 유지)
+                const similarity = this.calculateSimilarity(originalContent, editedContent);
+                if (similarity > 0.95) {
+                    UI.addLog('편집 결과가 원본과 너무 유사합니다. 원본을 유지합니다', 'error');
+                    this.state.generatedContent = originalContent;
+                } else {
+                    this.state.generatedContent = editedContent;
+                    this.state.totalChars = editedContent.length;
+                    UI.addLog(`편집 완료 (${originalLength.toLocaleString()}자 → ${editedContent.length.toLocaleString()}자, 유사도: ${(similarity * 100).toFixed(1)}%)`, 'success');
+                }
             }
             
-            this.state.totalCost += result.cost;
             UI.updateCounter(this.state.totalCost, this.state.totalChars);
             UI.updateProgress('Phase 3', 1, 1, 100);
             UI.addLog('Phase 3 완료!');
@@ -1961,6 +2349,29 @@ class NovelGeneratorApp {
             this.state.generatedContent = originalContent;
             UI.updateProgress('Phase 3', 1, 1, 100);
         }
+    }
+
+    calculateSimilarity(str1, str2) {
+        // 간단한 유사도 계산 (문자열 길이와 공통 부분 기반)
+        const len1 = str1.length;
+        const len2 = str2.length;
+        const minLen = Math.min(len1, len2);
+        const maxLen = Math.max(len1, len2);
+        
+        if (maxLen === 0) return 1;
+        
+        // 길이 차이
+        const lengthDiff = 1 - Math.abs(len1 - len2) / maxLen;
+        
+        // 공통 부분 (간단한 비교)
+        let common = 0;
+        const sampleSize = Math.min(1000, minLen);
+        for (let i = 0; i < sampleSize; i++) {
+            if (str1[i] === str2[i]) common++;
+        }
+        const charSimilarity = common / sampleSize;
+        
+        return (lengthDiff * 0.3 + charSimilarity * 0.7);
     }
 
     showCompletion() {
@@ -1977,6 +2388,22 @@ class NovelGeneratorApp {
             timeStr,
             this.state.totalCost
         );
+        
+        // 완성된 소설을 로컬 스토리지에 저장
+        const novelData = {
+            title: `${this.state.setting.substring(0, 30)}...`,
+            content: this.state.generatedContent,
+            charCount: this.state.totalChars,
+            cost: this.state.totalCost,
+            time: timeStr,
+            setting: this.state.setting,
+            characters: this.state.characters,
+            plot: this.state.plot,
+            createdAt: new Date().toISOString()
+        };
+        
+        Storage.saveNovel(novelData);
+        UI.renderNovelHistory();
         
         UI.addLog('모든 작업 완료!', 'success');
     }
@@ -2013,6 +2440,74 @@ class NovelGeneratorApp {
 
     sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    restoreSavedData() {
+        // 마지막 작업 상태 복원 (선택적)
+        const lastState = localStorage.getItem('last_novel_state');
+        if (lastState) {
+            try {
+                const state = JSON.parse(lastState);
+                // 기본 설정 복원
+                if (state.setting) {
+                    const settingInput = document.getElementById('setting-input');
+                    if (settingInput) settingInput.value = state.setting;
+                }
+                if (state.targetChars) {
+                    const slider = document.getElementById('target-chars-slider');
+                    if (slider) {
+                        slider.value = state.targetChars;
+                        document.getElementById('target-chars-display').textContent = 
+                            state.targetChars.toLocaleString();
+                        UI.updateEstimates(state.targetChars);
+                    }
+                }
+                if (state.isAdultContent !== undefined) {
+                    const check = document.getElementById('adult-content-check');
+                    if (check) check.checked = state.isAdultContent;
+                }
+                // 캐릭터 복원
+                if (state.characters && state.characters.length > 0) {
+                    const container = document.getElementById('characters-container');
+                    if (container) {
+                        container.innerHTML = '';
+                        state.characters.forEach((char, idx) => {
+                            UI.addCharacterCard(idx, char);
+                        });
+                    }
+                }
+                // 기승전결 복원
+                if (state.plot) {
+                    ['ki', 'seung', 'jeon', 'gyeol'].forEach(part => {
+                        const textarea = document.getElementById(`plot-${part}`);
+                        if (textarea && state.plot[part]) {
+                            textarea.value = state.plot[part];
+                            const counter = document.getElementById(`${part}-count`);
+                            if (counter) counter.textContent = state.plot[part].length;
+                        }
+                    });
+                    this.updatePlotTotal();
+                }
+            } catch (e) {
+                console.error('상태 복원 실패:', e);
+            }
+        }
+    }
+
+    saveCurrentState() {
+        const state = {
+            setting: document.getElementById('setting-input')?.value || '',
+            targetChars: this.state.targetChars || 30000,
+            isAdultContent: document.getElementById('adult-content-check')?.checked || false,
+            characters: UI.getCharacters(),
+            plot: {
+                ki: document.getElementById('plot-ki')?.value || '',
+                seung: document.getElementById('plot-seung')?.value || '',
+                jeon: document.getElementById('plot-jeon')?.value || '',
+                gyeol: document.getElementById('plot-gyeol')?.value || ''
+            }
+        };
+        localStorage.setItem('last_novel_state', JSON.stringify(state));
     }
 }
 
